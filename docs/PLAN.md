@@ -6,8 +6,8 @@
 
 - [x] `create-next-app` (TypeScript, App Router, Tailwind) — фактически Next.js 16 + Turbopack
 - [x] shadcn/ui (Base UI), базовый layout (sidebar, header, тёмная тема)
-- [x] `docker-compose.yml`: PostgreSQL (порт 5433) + MongoDB
-- [x] Prisma 7 (prisma.config.ts + adapter-pg): схема, миграции; Mongoose: подключение, модели
+- [x] `docker-compose.yml`: PostgreSQL (порт 5433)
+- [x] Prisma 7 (prisma.config.ts + adapter-pg): схема, миграции — единственная БД (Mongo убран 2026-07-15: контент в Postgres, вложенное — JSONB, ссылки по slug)
 - [x] Auth.js v5: GitHub/Google OAuth из env + dev-вход, Prisma-адаптер, защита `(app)`
 - [x] Zod, переменные окружения (`env.ts` с валидацией)
 
@@ -16,7 +16,7 @@
 ## Фаза 1 — Контент и база вопросов
 
 - [x] Формат контента: `content/questions/{topic}/*.md` с frontmatter (Zod-схема), маркер `<!-- answer -->`
-- [x] Скрипт `seed-content.ts`: content → MongoDB (upsert по slug), `npm run seed`
+- [x] Скрипт `seed-content.ts`: content → PostgreSQL (upsert по slug + prune удалённых), `npm run seed`
 - [x] Каталог вопросов: фильтры по теме/сложности, поиск, пагинация
 - [x] Страница вопроса: markdown с подсветкой кода → скрытый ответ → follow-ups → ссылки
 - [x] Закладки (Postgres, optimistic UI)
@@ -61,7 +61,7 @@
 - [ ] Расширение базы: 200+ вопросов, 80+ задач, System Design разборы (markdown + диаграммы), behavioral-вопросы (STAR)
 - [ ] SQL-задачи (проверка через выполнение в отдельной схеме Postgres или sql.js в браузере)
 - [ ] Rate limiting, e2e-тесты критических путей (Playwright)
-- [ ] Деплой: Vercel + Neon + MongoDB Atlas, CI (lint, typecheck, tests, seed dry-run)
+- [ ] CI (lint, typecheck, tests, seed dry-run); деплой Vercel + Neon подготовлен (см. README «Деплой»)
 
 ## Возможные будущие направления
 

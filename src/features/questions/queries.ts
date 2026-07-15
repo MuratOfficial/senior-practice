@@ -1,6 +1,7 @@
 import "server-only";
-import { connectMongo } from "@/lib/db/mongo";
-import { Question } from "@/lib/db/models/question";
+import { cache } from "react";
+import { prisma } from "@/lib/db/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 import {
   DIFFICULTIES,
   TOPICS,
@@ -33,79 +34,84 @@ export interface QuestionFilters {
 
 export const QUESTIONS_PAGE_SIZE = 20;
 
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export async function listQuestions(filters: QuestionFilters) {
-  await connectMongo();
-
-  const conditions: Record<string, unknown> = { status: "published" };
+  const where: Prisma.QuestionWhereInput = { status: "published" };
   if (filters.topic && (TOPICS as readonly string[]).includes(filters.topic)) {
-    conditions.topic = filters.topic;
+    where.topic = filters.topic;
   }
   if (
     filters.difficulty &&
     (DIFFICULTIES as readonly string[]).includes(filters.difficulty)
   ) {
-    conditions.difficulty = filters.difficulty;
+    where.difficulty = filters.difficulty as Difficulty;
   }
-  if (filters.q?.trim()) {
-    conditions.title = { $regex: escapeRegex(filters.q.trim()), $options: "i" };
+  const q = filters.q?.trim();
+  if (q) {
+    where.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { body: { contains: q, mode: "insensitive" } },
+    ];
   }
 
   const page = Math.max(1, filters.page ?? 1);
   const [docs, total] = await Promise.all([
-    Question.find(conditions)
-      .sort({ topic: 1, difficulty: -1, title: 1 })
-      .skip((page - 1) * QUESTIONS_PAGE_SIZE)
-      .limit(QUESTIONS_PAGE_SIZE)
-      .select("slug topic difficulty title tags")
-      .lean(),
-    Question.countDocuments(conditions),
+    prisma.question.findMany({
+      where,
+      // difficulty — Postgres-enum, сортируется по порядку объявления (senior последним → desc даёт senior первым)
+      orderBy: [{ topic: "asc" }, { difficulty: "desc" }, { title: "asc" }],
+      skip: (page - 1) * QUESTIONS_PAGE_SIZE,
+      take: QUESTIONS_PAGE_SIZE,
+      select: {
+        id: true,
+        slug: true,
+        topic: true,
+        difficulty: true,
+        title: true,
+        tags: true,
+      },
+    }),
+    prisma.question.count({ where }),
   ]);
 
   const items: QuestionListItem[] = docs.map((doc) => ({
-    id: String(doc._id),
-    slug: doc.slug,
+    ...doc,
     topic: doc.topic as Topic,
-    difficulty: doc.difficulty as Difficulty,
-    title: doc.title,
-    tags: doc.tags ?? [],
   }));
 
   return { items, total, page, pageSize: QUESTIONS_PAGE_SIZE };
 }
 
-export async function getQuestionBySlug(
-  slug: string
-): Promise<QuestionDetail | null> {
-  await connectMongo();
-  const doc = await Question.findOne({ slug, status: "published" }).lean();
-  if (!doc) return null;
+/**
+ * Обёрнуто в React cache: generateMetadata и страница зовут её в одном рендере —
+ * запрос к БД выполняется один раз.
+ */
+export const getQuestionBySlug = cache(
+  async (slug: string): Promise<QuestionDetail | null> => {
+    const doc = await prisma.question.findFirst({
+      where: { slug, status: "published" },
+    });
+    if (!doc) return null;
 
-  return {
-    id: String(doc._id),
-    slug: doc.slug,
-    topic: doc.topic as Topic,
-    difficulty: doc.difficulty as Difficulty,
-    title: doc.title,
-    tags: doc.tags ?? [],
-    body: doc.body,
-    answer: doc.answer,
-    followUps: doc.followUps ?? [],
-    references: (doc.references ?? []).map((r) => ({
-      title: r.title,
-      url: r.url,
-    })),
-  };
-}
+    return {
+      id: doc.id,
+      slug: doc.slug,
+      topic: doc.topic as Topic,
+      difficulty: doc.difficulty,
+      title: doc.title,
+      tags: doc.tags,
+      body: doc.body,
+      answer: doc.answer,
+      followUps: doc.followUps,
+      references: (doc.references as { title: string; url: string }[]) ?? [],
+    };
+  }
+);
 
 export async function countQuestionsByTopic() {
-  await connectMongo();
-  const rows = await Question.aggregate<{ _id: string; count: number }>([
-    { $match: { status: "published" } },
-    { $group: { _id: "$topic", count: { $sum: 1 } } },
-  ]);
-  return new Map(rows.map((r) => [r._id, r.count]));
+  const rows = await prisma.question.groupBy({
+    by: ["topic"],
+    where: { status: "published" },
+    _count: { _all: true },
+  });
+  return new Map(rows.map((r) => [r.topic, r._count._all]));
 }

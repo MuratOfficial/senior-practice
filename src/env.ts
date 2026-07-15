@@ -6,7 +6,6 @@ import { z } from "zod";
  */
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL обязателен (см. .env.example)"),
-  MONGODB_URI: z.string().min(1, "MONGODB_URI обязателен (см. .env.example)"),
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET обязателен (см. .env.example)"),
   AUTH_GITHUB_ID: z.string().optional(),
   AUTH_GITHUB_SECRET: z.string().optional(),

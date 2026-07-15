@@ -10,14 +10,13 @@
 | Язык | TypeScript (strict) | Типобезопасность по всему стеку |
 | UI | TailwindCSS 4 + shadcn/ui | Скорость разработки, доступные компоненты, полный контроль над стилями |
 | Редактор кода | Monaco Editor (`@monaco-editor/react`) | Тот же движок, что в VS Code: IntelliSense, подсветка TS/JS/Python |
-| Реляционная БД | PostgreSQL + Prisma | Пользователи, попытки, прогресс, spaced repetition — транзакционные, связные данные |
-| Документная БД | MongoDB + Mongoose | Контент: вопросы, задачи, решения — гибкая вложенная структура, версионирование контента |
+| БД | PostgreSQL + Prisma (dev: Docker, prod: Neon) | Одна база для всего: пользовательские данные (попытки, прогресс, SRS) и контент (вопросы, задачи). Вложенные структуры контента — JSONB. Источник истины контента — markdown в git |
 | Аутентификация | Auth.js v5 (NextAuth) | GitHub/Google OAuth + credentials; сессии в Postgres через Prisma-адаптер |
 | Валидация | Zod | Единые схемы для форм, API и сидов контента |
 | Выполнение JS/TS | Sandboxed iframe + Web Worker (в браузере) | Бесплатно, безопасно, мгновенно; TS транспилируется esbuild-wasm |
 | Выполнение Python | Pyodide (WASM, в браузере) | Полноценный CPython без серверной инфраструктуры |
 | Тесты | Vitest (unit) + Playwright (e2e) | Стандарт экосистемы |
-| Инфраструктура (dev) | Docker Compose (Postgres + Mongo) | Одна команда для локального окружения |
+| Инфраструктура (dev) | Docker Compose (Postgres) | Одна команда для локального окружения |
 
 ### Ключевое решение: выполнение кода в браузере
 
@@ -41,159 +40,57 @@
 ┌──────────────▼───────────────────────────────────────────────┐
 │  Next.js Server                                              │
 │  ├─ Auth.js (сессии)                                         │
-│  ├─ Content Service ──────────► MongoDB (вопросы, задачи)    │
+│  ├─ Content Service ──────────► PostgreSQL (вопросы, задачи) │
 │  ├─ Progress Service ─────────► PostgreSQL (попытки, SRS)    │
 │  └─ Zod-валидация на границе                                 │
 └───────────────────────────────────────────────────────────────┘
 ```
 
-Принцип разделения БД: **MongoDB — что учить** (контент, редко меняется, читается много, структура разнородная), **PostgreSQL — кто и как учит** (пользовательские данные, транзакции, агрегации для статистики).
+Одна база (PostgreSQL). Контент («что учить») живёт в git как markdown и загружается в Postgres сидом — БД здесь read-модель. Пользовательские данные («кто и как учит») ссылаются на контент **по slug**, а не по внутреннему id: slug стабилен при пересоздании/пересиде базы, поэтому закладки и прогресс SRS переживают любое пересоздание контента.
 
 ## 3. Модель данных
 
-### PostgreSQL (Prisma) — пользовательские данные
+Всё в PostgreSQL (Prisma) — актуальная схема в [prisma/schema.prisma](../prisma/schema.prisma). Два слоя:
+
+**Контент** (read-модель, наполняется сидом из `content/`):
 
 ```prisma
-model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String?
-  createdAt     DateTime @default(now())
-  submissions   Submission[]
-  reviews       ReviewState[]
-  bookmarks     Bookmark[]
-  mockSessions  MockSession[]
-}
-
-// Попытка решения coding-задачи
-model Submission {
-  id          String   @id @default(cuid())
-  userId      String
-  challengeId String   // _id документа в MongoDB
-  language    String   // "typescript" | "javascript" | "python"
-  code        String
-  status      SubmissionStatus // PASSED | FAILED | ERROR
-  passedTests Int
-  totalTests  Int
-  durationMs  Int?
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
-  @@index([userId, challengeId])
-}
-
-// Spaced repetition (SM-2) для теоретических вопросов
-model ReviewState {
-  id         String   @id @default(cuid())
-  userId     String
-  questionId String   // _id в MongoDB
-  easeFactor Float    @default(2.5)
-  interval   Int      @default(0)   // дни
-  repetition Int      @default(0)
-  dueAt      DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id])
-  @@unique([userId, questionId])
-  @@index([userId, dueAt])
-}
-
-model Bookmark {
-  id        String   @id @default(cuid())
-  userId    String
-  itemId    String   // question или challenge id
-  itemType  ItemType // QUESTION | CHALLENGE
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  @@unique([userId, itemId, itemType])
-}
-
-// Сессия mock-интервью
-model MockSession {
-  id         String   @id @default(cuid())
-  userId     String
-  config     Json     // темы, сложность, длительность
-  items      Json     // выбранные вопросы/задачи + самооценки
-  score      Int?
-  startedAt  DateTime @default(now())
-  finishedAt DateTime?
-  user       User     @relation(fields: [userId], references: [id])
+// Теоретический вопрос; slug — стабильный ключ (topic-имяфайла)
+model Question {
+  slug        String        @unique  // для URL и внешних ссылок
+  type        QuestionType           // theory | quiz
+  topic       String                 // "javascript" | "typescript" | ...
+  tags        String[]
+  difficulty  Difficulty             // junior | middle | senior
+  title       String
+  body        String                 // Markdown: сам вопрос
+  answer      String                 // Markdown: эталонный ответ
+  quizOptions Json?
+  followUps   String[]
+  references  Json                   // { title, url }[]
+  status      ContentStatus          // draft | published
+  version     Int
 }
 ```
 
-Плюс стандартные таблицы Auth.js (Account, Session, VerificationToken).
+Challenge (фаза 2) и LearningPath (фаза 4) добавятся так же: таблица с уникальным slug, вложенные структуры (языки, тест-кейсы, секции) — JSONB с Zod-валидацией на сиде. Их точный формат фиксируется после spike песочницы.
 
-### MongoDB (Mongoose) — контент
+**Пользовательские данные** — `Submission`, `ReviewState`, `Bookmark`, `MockSession` + таблицы Auth.js. Все ссылки на контент — по slug (`challengeSlug`, `questionSlug`, `itemSlug`): slug стабилен между пересозданиями БД, в отличие от суррогатных id.
 
-```ts
-// Теоретический вопрос
-interface Question {
-  _id: ObjectId;
-  slug: string;                  // уникальный, для URL
-  type: "theory" | "quiz";       // открытый вопрос или с вариантами
-  topic: string;                 // "javascript" | "typescript" | "react" | ...
-  tags: string[];                // "closures", "event-loop", "hooks"
-  difficulty: "junior" | "middle" | "senior";
-  title: string;
-  body: string;                  // Markdown: сам вопрос
-  answer: string;                // Markdown: эталонный ответ / разбор
-  quizOptions?: { text: string; correct: boolean; explanation: string }[];
-  followUps?: string[];          // вопросы-углубления, как задаёт интервьюер
-  references?: { title: string; url: string }[];
-  status: "draft" | "published";
-  version: number;
-  updatedAt: Date;
-}
-
-// Практическая задача с автопроверкой
-interface Challenge {
-  _id: ObjectId;
-  slug: string;
-  category: "algorithms" | "javascript" | "react" | "async" | "backend" | "python" | "sql";
-  tags: string[];
-  difficulty: "easy" | "medium" | "hard";
-  title: string;
-  statement: string;             // Markdown: условие
-  hints: string[];               // прогрессивные подсказки
-  languages: {                   // поддерживаемые языки
-    id: "typescript" | "javascript" | "python";
-    starterCode: string;         // заготовка
-    solutionCode: string;        // эталонное решение
-    testCases: {
-      name: string;
-      code: string;              // исполняемый тест (assert-стиль)
-      hidden: boolean;           // скрытые тесты против хардкода
-    }[];
-  }[];
-  explanation: string;           // Markdown: разбор решения, сложность O(n)...
-  status: "draft" | "published";
-  version: number;
-}
-
-// Учебный трек (структурированный план подготовки)
-interface LearningPath {
-  _id: ObjectId;
-  slug: string;                  // "senior-frontend", "senior-backend-node", "senior-python"
-  title: string;
-  description: string;
-  sections: {
-    title: string;               // "Event Loop и асинхронность"
-    items: { type: "question" | "challenge"; refId: ObjectId }[];
-  }[];
-}
-```
-
-Контент сидится из Markdown/JSON-файлов в репозитории (`content/`) скриптом — контент версионируется в git, ревьюится как код.
+Контент сидится из Markdown-файлов репозитория (`content/`) скриптом `npm run seed` (upsert по slug + снятие с публикации удалённых файлов) — контент версионируется в git, ревьюится как код.
 
 ## 4. Структура проекта
 
 ```
 senior-practice/
-├─ docker-compose.yml            # postgres + mongo для dev
+├─ docker-compose.yml            # postgres для dev
 ├─ prisma/
 │  └─ schema.prisma
 ├─ content/                      # исходники контента (markdown + json)
 │  ├─ questions/{topic}/*.md
 │  └─ challenges/{category}/*/   # statement.md, meta.json, ts/, py/
 ├─ scripts/
-│  └─ seed-content.ts            # content/ → MongoDB
+│  └─ seed-content.ts            # content/ → PostgreSQL
 ├─ src/
 │  ├─ app/                       # App Router
 │  │  ├─ (marketing)/            # лендинг
@@ -216,7 +113,6 @@ senior-practice/
 │  ├─ components/ui/             # shadcn/ui
 │  ├─ lib/
 │  │  ├─ db/prisma.ts
-│  │  ├─ db/mongo.ts
 │  │  └─ auth.ts
 │  └─ types/
 ├─ public/sandbox/               # статичный html песочницы (отдельный origin в prod)
@@ -258,4 +154,4 @@ SM-2 поверх `ReviewState`: ежедневная очередь `dueAt <= n
 - **Производительность**: контент — RSC + кэш (`revalidateTag` при пересиде); Monaco и Pyodide — lazy load (Pyodide ~10 МБ, грузится по требованию с прогрессом).
 - **Доступность**: shadcn/ui (Radix) даёт a11y из коробки; тёмная/светлая тема.
 - **Тестирование**: unit — алгоритм SM-2, sandbox-протокол, сиды; e2e — критические пути (решение задачи, review-сессия).
-- **Деплой**: Vercel (или Docker на VPS) + Neon/Supabase (Postgres) + MongoDB Atlas.
+- **Деплой**: Vercel + Neon (Postgres). Миграции применяются на билде (`vercel-build: prisma migrate deploy && next build`, прямой коннект через `DATABASE_URL_UNPOOLED`), рантайм ходит через пул Neon (`DATABASE_URL`). Контент загружается `npm run seed` с прод-URL после деплоя.

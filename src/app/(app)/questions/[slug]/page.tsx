@@ -42,9 +42,9 @@ export default async function QuestionPage({
   const bookmark = session?.user?.id
     ? await prisma.bookmark.findUnique({
         where: {
-          userId_itemId_itemType: {
+          userId_itemSlug_itemType: {
             userId: session.user.id,
-            itemId: question.id,
+            itemSlug: question.slug,
             itemType: "QUESTION",
           },
         },
@@ -79,9 +79,8 @@ export default async function QuestionPage({
             {question.title}
           </h1>
           <BookmarkButton
-            itemId={question.id}
-            itemType="QUESTION"
             slug={question.slug}
+            itemType="QUESTION"
             initialBookmarked={Boolean(bookmark)}
           />
         </div>
