@@ -6,7 +6,7 @@
 
 | Слой | Технология | Обоснование |
 |---|---|---|
-| Framework | Next.js 15 (App Router, RSC) | Один репозиторий для фронта и бэка, Server Components для контента, Route Handlers / Server Actions для API |
+| Framework | Next.js 16 (App Router, RSC, Turbopack) | Один репозиторий для фронта и бэка, Server Components для контента, Route Handlers / Server Actions для API |
 | Язык | TypeScript (strict) | Типобезопасность по всему стеку |
 | UI | TailwindCSS 4 + shadcn/ui | Скорость разработки, доступные компоненты, полный контроль над стилями |
 | Редактор кода | Monaco Editor (`@monaco-editor/react`) | Тот же движок, что в VS Code: IntelliSense, подсветка TS/JS/Python |

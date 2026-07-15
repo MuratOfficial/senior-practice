@@ -4,25 +4,25 @@
 
 ## Фаза 0 — Каркас (фундамент)
 
-- [ ] `create-next-app` (TypeScript, App Router, Tailwind), strict tsconfig, ESLint + Prettier
-- [ ] shadcn/ui, базовый layout (sidebar, header, тёмная тема)
-- [ ] `docker-compose.yml`: PostgreSQL + MongoDB
-- [ ] Prisma: схема, миграции; Mongoose: подключение, модели
-- [ ] Auth.js v5: GitHub + Google OAuth, Prisma-адаптер, защита группы роутов `(app)`
-- [ ] Zod, переменные окружения (`env.ts` с валидацией)
+- [x] `create-next-app` (TypeScript, App Router, Tailwind) — фактически Next.js 16 + Turbopack
+- [x] shadcn/ui (Base UI), базовый layout (sidebar, header, тёмная тема)
+- [x] `docker-compose.yml`: PostgreSQL (порт 5433) + MongoDB
+- [x] Prisma 7 (prisma.config.ts + adapter-pg): схема, миграции; Mongoose: подключение, модели
+- [x] Auth.js v5: GitHub/Google OAuth из env + dev-вход, Prisma-адаптер, защита `(app)`
+- [x] Zod, переменные окружения (`env.ts` с валидацией)
 
-**Результат:** пустое приложение с логином и работающими БД.
+**Результат:** ✅ приложение с логином и работающими БД (завершено 2026-07-15).
 
 ## Фаза 1 — Контент и база вопросов
 
-- [ ] Формат контента: `content/questions/{topic}/*.md` с frontmatter (Zod-схема)
-- [ ] Скрипт `seed-content.ts`: content → MongoDB (upsert по slug, версионирование)
-- [ ] Каталог вопросов: фильтры по теме/сложности/тегам, поиск, пагинация
-- [ ] Страница вопроса: markdown-рендер (вопрос → скрытый ответ → follow-ups → ссылки)
-- [ ] Закладки
-- [ ] Первичный контент: 60–80 senior-вопросов — JS core (event loop, замыкания, прототипы), TypeScript, React, Node.js, Python, HTTP/Web, SQL/NoSQL
+- [x] Формат контента: `content/questions/{topic}/*.md` с frontmatter (Zod-схема), маркер `<!-- answer -->`
+- [x] Скрипт `seed-content.ts`: content → MongoDB (upsert по slug), `npm run seed`
+- [x] Каталог вопросов: фильтры по теме/сложности, поиск, пагинация
+- [x] Страница вопроса: markdown с подсветкой кода → скрытый ответ → follow-ups → ссылки
+- [x] Закладки (Postgres, optimistic UI)
+- [x] Первичный контент: 52 вопроса по 8 темам — JS, TS, React, Node.js, Python, Web/HTTP, БД, архитектура (расширение — фаза 5)
 
-**Результат:** полноценный справочник вопросов с ответами.
+**Результат:** ✅ полноценный справочник вопросов с ответами (завершено 2026-07-15).
 
 ## Фаза 2 — Песочница и задачи с автопроверкой
 

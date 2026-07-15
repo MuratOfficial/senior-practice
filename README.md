@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Senior Practice
 
-## Getting Started
+Платформа подготовки к интервью Senior Software Engineer: теоретические вопросы, задачи с автопроверкой кода (JS/TS/Python в браузере), spaced repetition и mock-интервью.
 
-First, run the development server:
+- Архитектура: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- План разработки: [docs/PLAN.md](docs/PLAN.md)
+
+## Стек
+
+Next.js 16 (App Router, Turbopack) · TypeScript · TailwindCSS 4 + shadcn/ui (Base UI) · PostgreSQL + Prisma 7 · MongoDB + Mongoose · Auth.js v5
+
+## Запуск локально
 
 ```bash
+# 1. Зависимости
+npm install
+
+# 2. Базы данных (Postgres на 5433, Mongo на 27017)
+docker compose up -d
+
+# 3. Переменные окружения
+cp .env.example .env
+# сгенерировать AUTH_SECRET:
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+# 4. Миграции и Prisma-клиент
+npx prisma migrate dev
+
+# 5. Dev-сервер
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте http://localhost:3000. В development доступен **dev-вход** без OAuth (страница /signin). Для входа через GitHub/Google заполните `AUTH_GITHUB_*` / `AUTH_GOOGLE_*` в `.env` (инструкции в `.env.example`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Структура
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+prisma/            схема и миграции (PostgreSQL: пользователи, попытки, SRS)
+src/app/           роуты: (marketing) — лендинг, (app) — авторизованная зона
+src/components/    UI (shadcn/ui в components/ui)
+src/lib/auth.ts    Auth.js v5 (JWT-сессии, Prisma-адаптер)
+src/lib/db/        prisma.ts, mongo.ts, models/ (Mongoose: контент)
+src/env.ts         Zod-валидация переменных окружения
+docs/              архитектура и план
+```
 
-## Learn More
+## База данных
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **PostgreSQL** — пользовательские данные: аккаунты, попытки решений, spaced repetition, mock-сессии. Управляется Prisma-миграциями.
+- **MongoDB** — контент: вопросы, задачи, учебные треки. Наполняется сид-скриптом из `content/` (фаза 1).

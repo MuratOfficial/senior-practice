@@ -1,0 +1,190 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  listQuestions,
+  QUESTIONS_PAGE_SIZE,
+} from "@/features/questions/queries";
+import {
+  DIFFICULTY_LABELS,
+  TOPIC_LABELS,
+  TOPICS,
+  DIFFICULTIES,
+} from "@/features/questions/topics";
+
+export const metadata: Metadata = { title: "Вопросы" };
+
+type SearchParams = { [key: string]: string | string[] | undefined };
+
+function param(sp: SearchParams, key: string): string | undefined {
+  const v = sp[key];
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+function buildQuery(
+  sp: SearchParams,
+  patch: Record<string, string | undefined>
+): string {
+  const params = new URLSearchParams();
+  for (const key of ["topic", "difficulty", "q"]) {
+    const value = key in patch ? patch[key] : param(sp, key);
+    if (value) params.set(key, value);
+  }
+  if (patch.page && patch.page !== "1") params.set("page", patch.page);
+  const qs = params.toString();
+  return qs ? `/questions?${qs}` : "/questions";
+}
+
+export default async function QuestionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const sp = await searchParams;
+  const topic = param(sp, "topic");
+  const difficulty = param(sp, "difficulty");
+  const q = param(sp, "q");
+  const page = Number(param(sp, "page") ?? "1") || 1;
+
+  const { items, total } = await listQuestions({ topic, difficulty, q, page });
+  const totalPages = Math.max(1, Math.ceil(total / QUESTIONS_PAGE_SIZE));
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">База вопросов</h1>
+        <p className="text-muted-foreground">
+          Найдено: {total}. Выберите тему, сложность или ищите по названию.
+        </p>
+      </div>
+
+      <form action="/questions" className="flex max-w-md gap-2">
+        {topic && <input type="hidden" name="topic" value={topic} />}
+        {difficulty && (
+          <input type="hidden" name="difficulty" value={difficulty} />
+        )}
+        <Input name="q" placeholder="Поиск по названию…" defaultValue={q} />
+        <Button type="submit" variant="outline" aria-label="Искать">
+          <Search className="size-4" />
+        </Button>
+      </form>
+
+      <div className="flex flex-wrap gap-1.5">
+        <FilterChip href={buildQuery(sp, { topic: undefined, page: "1" })} active={!topic}>
+          Все темы
+        </FilterChip>
+        {TOPICS.map((t) => (
+          <FilterChip
+            key={t}
+            href={buildQuery(sp, { topic: t, page: "1" })}
+            active={topic === t}
+          >
+            {TOPIC_LABELS[t]}
+          </FilterChip>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        <FilterChip
+          href={buildQuery(sp, { difficulty: undefined, page: "1" })}
+          active={!difficulty}
+        >
+          Любая сложность
+        </FilterChip>
+        {DIFFICULTIES.map((d) => (
+          <FilterChip
+            key={d}
+            href={buildQuery(sp, { difficulty: d, page: "1" })}
+            active={difficulty === d}
+          >
+            {DIFFICULTY_LABELS[d]}
+          </FilterChip>
+        ))}
+      </div>
+
+      {items.length === 0 ? (
+        <p className="py-12 text-center text-muted-foreground">
+          Ничего не найдено — попробуйте изменить фильтры.
+        </p>
+      ) : (
+        <div className="grid gap-3">
+          {items.map((item) => (
+            <Link key={item.id} href={`/questions/${item.slug}`}>
+              <Card className="transition-colors hover:bg-accent/50">
+                <CardHeader>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">{TOPIC_LABELS[item.topic]}</Badge>
+                    <Badge
+                      variant={
+                        item.difficulty === "senior" ? "default" : "secondary"
+                      }
+                    >
+                      {DIFFICULTY_LABELS[item.difficulty]}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-base">{item.title}</CardTitle>
+                  <CardDescription>{item.tags.join(" · ")}</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          {page > 1 && (
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href={buildQuery(sp, { page: String(page - 1) })} />}
+            >
+              ← Назад
+            </Button>
+          )}
+          <span className="text-sm text-muted-foreground">
+            {page} / {totalPages}
+          </span>
+          {page < totalPages && (
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href={buildQuery(sp, { page: String(page + 1) })} />}
+            >
+              Вперёд →
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterChip({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={
+        active
+          ? "rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
+          : "rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+      }
+    >
+      {children}
+    </Link>
+  );
+}
