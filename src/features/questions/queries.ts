@@ -28,6 +28,7 @@ export interface QuestionDetail extends QuestionListItem {
 export interface QuestionFilters {
   topic?: string;
   difficulty?: string;
+  tag?: string;
   q?: string;
   page?: number;
 }
@@ -44,6 +45,10 @@ export async function listQuestions(filters: QuestionFilters) {
     (DIFFICULTIES as readonly string[]).includes(filters.difficulty)
   ) {
     where.difficulty = filters.difficulty as Difficulty;
+  }
+  const tag = filters.tag?.trim();
+  if (tag) {
+    where.tags = { has: tag };
   }
   const q = filters.q?.trim();
   if (q) {
@@ -106,6 +111,40 @@ export const getQuestionBySlug = cache(
     };
   }
 );
+
+/** Закладки пользователя на вопросы, свежие первыми (join с контентом по slug). */
+export async function listBookmarkedQuestions(
+  userId: string
+): Promise<QuestionListItem[]> {
+  const bookmarks = await prisma.bookmark.findMany({
+    where: { userId, itemType: "QUESTION" },
+    orderBy: { createdAt: "desc" },
+    select: { itemSlug: true },
+  });
+  if (bookmarks.length === 0) return [];
+
+  const questions = await prisma.question.findMany({
+    where: {
+      slug: { in: bookmarks.map((b) => b.itemSlug) },
+      status: "published",
+    },
+    select: {
+      id: true,
+      slug: true,
+      topic: true,
+      difficulty: true,
+      title: true,
+      tags: true,
+    },
+  });
+  const bySlug = new Map(
+    questions.map((q) => [q.slug, { ...q, topic: q.topic as Topic }])
+  );
+
+  return bookmarks
+    .map((b) => bySlug.get(b.itemSlug))
+    .filter((q): q is QuestionListItem => q !== undefined);
+}
 
 export async function countQuestionsByTopic() {
   const rows = await prisma.question.groupBy({

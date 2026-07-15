@@ -19,7 +19,8 @@
 - [x] Скрипт `seed-content.ts`: content → PostgreSQL (upsert по slug + prune удалённых), `npm run seed`
 - [x] Каталог вопросов: фильтры по теме/сложности, поиск, пагинация
 - [x] Страница вопроса: markdown с подсветкой кода → скрытый ответ → follow-ups → ссылки
-- [x] Закладки (Postgres, optimistic UI)
+- [x] Закладки (Postgres, optimistic UI) + страница «Закладки» в навигации
+- [x] Кликабельные теги: фильтр по тегу в каталоге, теги-ссылки на странице вопроса
 - [x] Первичный контент: 52 вопроса по 8 темам — JS, TS, React, Node.js, Python, Web/HTTP, БД, архитектура (расширение — фаза 5)
 
 **Результат:** ✅ полноценный справочник вопросов с ответами (завершено 2026-07-15).
@@ -61,7 +62,8 @@
 - [ ] Расширение базы: 200+ вопросов, 80+ задач, System Design разборы (markdown + диаграммы), behavioral-вопросы (STAR)
 - [ ] SQL-задачи (проверка через выполнение в отдельной схеме Postgres или sql.js в браузере)
 - [ ] Rate limiting, e2e-тесты критических путей (Playwright)
-- [ ] CI (lint, typecheck, tests, seed dry-run); деплой Vercel + Neon подготовлен (см. README «Деплой»)
+- [x] CI (lint, typecheck, Vitest + валидация контента как seed dry-run) — GitHub Actions, 2026-07-16
+- [x] Деплой Vercel + Neon подготовлен (vercel-build, prisma migrate deploy, README «Деплой») — 2026-07-16
 
 ## Возможные будущие направления
 

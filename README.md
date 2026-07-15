@@ -46,8 +46,19 @@ src/components/    UI (shadcn/ui в components/ui)
 src/lib/auth.ts    Auth.js v5 (JWT-сессии, Prisma-адаптер)
 src/lib/db/        prisma.ts (singleton, adapter-pg)
 src/env.ts         Zod-валидация переменных окружения
+tests/             Vitest: парсинг контента + валидация всех файлов content/
 docs/              архитектура и план
 ```
+
+## Проверки
+
+```bash
+npm run lint       # ESLint
+npm run typecheck  # tsc --noEmit
+npm test           # Vitest: unit + валидация контента (dry-run сида)
+```
+
+То же самое гоняет CI (GitHub Actions) на каждый push/PR. Битый frontmatter или отсутствующий маркер `<!-- answer -->` в `content/` валит CI до попадания в прод.
 
 ## База данных
 

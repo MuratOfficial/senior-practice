@@ -69,9 +69,13 @@ export default async function QuestionPage({
             {DIFFICULTY_LABELS[question.difficulty]}
           </Badge>
           {question.tags.map((tag) => (
-            <span key={tag} className="text-xs text-muted-foreground">
+            <Link
+              key={tag}
+              href={`/questions?tag=${encodeURIComponent(tag)}`}
+              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
               #{tag}
-            </span>
+            </Link>
           ))}
         </div>
         <div className="flex items-start justify-between gap-4">

@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Bookmark,
   Code2,
   FlaskConical,
   LayoutDashboard,
@@ -39,6 +40,12 @@ export const navItems: NavItem[] = [
     href: "/playground",
     icon: FlaskConical,
     description: "Свободный редактор JS/TS/Python",
+  },
+  {
+    title: "Закладки",
+    href: "/bookmarks",
+    icon: Bookmark,
+    description: "Сохранённые вопросы и задачи",
   },
   {
     title: "Повторение",

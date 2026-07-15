@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { QuestionCard } from "@/features/questions/question-card";
 import {
   listQuestions,
   QUESTIONS_PAGE_SIZE,
@@ -30,7 +29,7 @@ function buildQuery(
   patch: Record<string, string | undefined>
 ): string {
   const params = new URLSearchParams();
-  for (const key of ["topic", "difficulty", "q"]) {
+  for (const key of ["topic", "difficulty", "tag", "q"]) {
     const value = key in patch ? patch[key] : param(sp, key);
     if (value) params.set(key, value);
   }
@@ -47,10 +46,17 @@ export default async function QuestionsPage({
   const sp = await searchParams;
   const topic = param(sp, "topic");
   const difficulty = param(sp, "difficulty");
+  const tag = param(sp, "tag");
   const q = param(sp, "q");
   const page = Number(param(sp, "page") ?? "1") || 1;
 
-  const { items, total } = await listQuestions({ topic, difficulty, q, page });
+  const { items, total } = await listQuestions({
+    topic,
+    difficulty,
+    tag,
+    q,
+    page,
+  });
   const totalPages = Math.max(1, Math.ceil(total / QUESTIONS_PAGE_SIZE));
 
   return (
@@ -67,11 +73,26 @@ export default async function QuestionsPage({
         {difficulty && (
           <input type="hidden" name="difficulty" value={difficulty} />
         )}
-        <Input name="q" placeholder="Поиск по названию…" defaultValue={q} />
+        {tag && <input type="hidden" name="tag" value={tag} />}
+        <Input
+          name="q"
+          placeholder="Поиск по названию и тексту…"
+          defaultValue={q}
+        />
         <Button type="submit" variant="outline" aria-label="Искать">
           <Search className="size-4" />
         </Button>
       </form>
+
+      {tag && (
+        <Link
+          href={buildQuery(sp, { tag: undefined, page: "1" })}
+          className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
+        >
+          #{tag}
+          <X className="size-3" aria-label="Сбросить фильтр по тегу" />
+        </Link>
+      )}
 
       <div className="flex flex-wrap gap-1.5">
         <FilterChip href={buildQuery(sp, { topic: undefined, page: "1" })} active={!topic}>
@@ -113,24 +134,7 @@ export default async function QuestionsPage({
       ) : (
         <div className="grid gap-3">
           {items.map((item) => (
-            <Link key={item.id} href={`/questions/${item.slug}`}>
-              <Card className="transition-colors hover:bg-accent/50">
-                <CardHeader>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline">{TOPIC_LABELS[item.topic]}</Badge>
-                    <Badge
-                      variant={
-                        item.difficulty === "senior" ? "default" : "secondary"
-                      }
-                    >
-                      {DIFFICULTY_LABELS[item.difficulty]}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-base">{item.title}</CardTitle>
-                  <CardDescription>{item.tags.join(" · ")}</CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
+            <QuestionCard key={item.slug} question={item} />
           ))}
         </div>
       )}
