@@ -8,7 +8,13 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export function AppHeader({ userSlot }: { userSlot?: React.ReactNode }) {
+export function AppHeader({
+  userSlot,
+  reviewDueCount = 0,
+}: {
+  userSlot?: React.ReactNode;
+  reviewDueCount?: number;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -28,7 +34,10 @@ export function AppHeader({ userSlot }: { userSlot?: React.ReactNode }) {
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0 pt-10">
           <SheetTitle className="sr-only">Навигация</SheetTitle>
-          <AppSidebar onNavigate={() => setOpen(false)} />
+          <AppSidebar
+            onNavigate={() => setOpen(false)}
+            reviewDueCount={reviewDueCount}
+          />
         </SheetContent>
       </Sheet>
 

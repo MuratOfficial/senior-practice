@@ -5,7 +5,14 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { navItems } from "@/config/nav";
 
-export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
+export function AppSidebar({
+  onNavigate,
+  reviewDueCount = 0,
+}: {
+  onNavigate?: () => void;
+  /** Сколько вопросов ждут повторения — бейдж у пункта «Повторение» */
+  reviewDueCount?: number;
+}) {
   const pathname = usePathname();
 
   return (
@@ -27,6 +34,11 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
           >
             <item.icon className="size-4 shrink-0" />
             {item.title}
+            {item.href === "/review" && reviewDueCount > 0 && (
+              <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+                {reviewDueCount}
+              </span>
+            )}
           </Link>
         );
       })}

@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Markdown } from "@/components/markdown";
 import { AnswerReveal } from "@/features/questions/answer-reveal";
 import { BookmarkButton } from "@/features/questions/bookmark-button";
+import { RatingPanel } from "@/features/review/rating-panel";
 import { getQuestionBySlug } from "@/features/questions/queries";
 import {
   DIFFICULTY_LABELS,
@@ -96,7 +97,7 @@ export default async function QuestionPage({
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Эталонный ответ</h2>
-        <AnswerReveal>
+        <AnswerReveal footer={<RatingPanel slug={question.slug} />}>
           <Markdown>{question.answer}</Markdown>
         </AnswerReveal>
       </section>
