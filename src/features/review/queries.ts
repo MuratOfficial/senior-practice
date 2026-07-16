@@ -47,12 +47,51 @@ export async function listDueQuestions(userId: string): Promise<DueQuestion[]> {
   });
 }
 
-export async function countDueQuestions(userId: string): Promise<number> {
-  return prisma.reviewState.count({
-    where: { userId, dueAt: { lte: new Date() } },
+/**
+ * Счёт только по существующим published-вопросам: ReviewState ссылается на slug
+ * без FK, и после prune в сиде могут оставаться осиротевшие записи — иначе
+ * бейдж показывал бы N, а очередь была бы пустой.
+ */
+async function countExistingQuestions(
+  states: { questionSlug: string }[]
+): Promise<number> {
+  if (states.length === 0) return 0;
+  return prisma.question.count({
+    where: {
+      slug: { in: states.map((s) => s.questionSlug) },
+      status: "published",
+    },
   });
 }
 
+/** SRS-статусы для набора вопросов (бейджи в каталоге): due — пора повторить. */
+export async function getReviewBadges(
+  userId: string,
+  slugs: string[]
+): Promise<Map<string, "due" | "scheduled">> {
+  if (slugs.length === 0) return new Map();
+  const states = await prisma.reviewState.findMany({
+    where: { userId, questionSlug: { in: slugs } },
+    select: { questionSlug: true, dueAt: true },
+  });
+  const now = new Date();
+  return new Map(
+    states.map((s) => [s.questionSlug, s.dueAt <= now ? "due" : "scheduled"])
+  );
+}
+
+export async function countDueQuestions(userId: string): Promise<number> {
+  const states = await prisma.reviewState.findMany({
+    where: { userId, dueAt: { lte: new Date() } },
+    select: { questionSlug: true },
+  });
+  return countExistingQuestions(states);
+}
+
 export async function countTrackedQuestions(userId: string): Promise<number> {
-  return prisma.reviewState.count({ where: { userId } });
+  const states = await prisma.reviewState.findMany({
+    where: { userId },
+    select: { questionSlug: true },
+  });
+  return countExistingQuestions(states);
 }

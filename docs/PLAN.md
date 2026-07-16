@@ -27,16 +27,18 @@
 
 ## Фаза 2 — Песочница и задачи с автопроверкой
 
-- [ ] Sandbox-инфраструктура: sandboxed iframe + Web Worker, `postMessage`-протокол, timeout, перехват console
-- [ ] JS-runner; TS через esbuild-wasm; Python через Pyodide (lazy load)
-- [ ] Monaco Editor: обёртка, темы, переключение языка
-- [ ] Формат задач в `content/challenges/`: условие, starter/solution code, тест-кейсы (открытые + скрытые)
-- [ ] Страница задачи: условие | редактор | тесты; Run / Submit; подсказки; разбор после сдачи
-- [ ] Submissions в Postgres, история попыток
-- [ ] Playground: свободный редактор, сохранение и шаринг сниппетов
-- [ ] Первичные задачи: 25–30 штук — алгоритмы (easy/medium), practical JS (debounce, promise pool, event emitter, deep clone), React (хуки), Python, async
+- [x] Sandbox-инфраструктура: sandboxed iframe (`public/sandbox/runner.html`, opaque origin, CSP в next.config) + Web Worker, `postMessage`-протокол, timeout c terminate, перехват console
+- [x] JS-runner (assert-API, AsyncFunction); TS через esbuild-wasm (`public/vendor`, copy-vendor.mjs); Python через Pyodide (CDN jsdelivr, lazy)
+- [x] Monaco Editor: обёртка `src/components/code-editor.tsx`, темы, переключение языка
+- [x] Формат задач `content/challenges/{category}/{slug}.md`: YAML-frontmatter c languages (starter/solution/tests, скрытые тесты), маркер `<!-- explanation -->`
+- [x] Страница задачи: условие | Monaco | Run (открытые) / Сдать (все); подсказки; разбор и решения открываются после первой сдачи
+- [x] Submissions в Postgres (запись при сдаче)
+- [ ] Страница истории попыток (полировка)
+- [x] Playground: JS/TS/Python, консоль, сохранение сниппета и шаринг по ссылке (модель Snippet)
+- [x] Первичные задачи: 12 — practical JS (debounce, event emitter, deep equal, memoize, LRU, groupBy), async (promise pool, Promise.all, retry), алгоритмы (two sum — JS+Py, merge intervals, binary search), Python (chunked, top-k)
+- [ ] React-задачи (нужен React-runtime в песочнице) и добор до 25–30 — фаза 5
 
-**Результат:** ядро продукта — можно писать и проверять код.
+**Результат:** ✅ ядро продукта — можно писать и проверять код (завершено 2026-07-16).
 
 ## Фаза 3 — Spaced Repetition
 

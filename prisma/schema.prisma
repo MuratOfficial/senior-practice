@@ -24,6 +24,7 @@ model User {
   reviews      ReviewState[]
   bookmarks    Bookmark[]
   mockSessions MockSession[]
+  snippets     Snippet[]
 }
 
 model Account {
@@ -179,4 +180,46 @@ model MockSession {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, startedAt])
+}
+
+
+enum ChallengeDifficulty {
+  easy
+  medium
+  hard
+}
+
+/// Задача с автопроверкой из content/challenges/**; источник истины — markdown в git.
+/// languages: [{ id: "javascript"|"python", starter, solution, tests: [{ name, code, hidden }] }]
+model Challenge {
+  id          String              @id @default(cuid())
+  slug        String              @unique
+  category    String
+  tags        String[]
+  difficulty  ChallengeDifficulty
+  title       String
+  statement   String
+  explanation String
+  hints       String[]
+  languages   Json
+  status      ContentStatus       @default(published)
+  version     Int                 @default(1)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([status, category])
+  @@index([status, difficulty])
+}
+
+/// Сниппет playground: сохранение и шаринг по ссылке
+model Snippet {
+  id        String   @id @default(cuid())
+  userId    String
+  language  String
+  code      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

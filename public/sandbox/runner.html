@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>sandbox</title>
+</head>
+<body>
+<!--
+  Раннер песочницы. Загружается в iframe c sandbox="allow-scripts" (opaque
+  origin — нет доступа к кукам/DOM/localStorage приложения). Код пользователя
+  выполняется в Web Worker: его можно жёстко убить terminate() по таймауту.
+-->
+<script type="text/worker" id="worker-src">
+"use strict";
+
+var pyodideReady = null;
+
+function send(msg) { self.postMessage(msg); }
+
+function fmt(args) {
+  return args.map(function (a) {
+    if (typeof a === "string") return a;
+    if (a instanceof Error) return a.name + ": " + a.message;
+    try {
+      var s = JSON.stringify(a);
+      return s === undefined ? String(a) : s;
+    } catch (e) { return String(a); }
+  }).join(" ");
+}
+
+["log", "warn", "error", "info"].forEach(function (level) {
+  console[level] = function () {
+    send({ type: "console", level: level, text: fmt([].slice.call(arguments)) });
+  };
+});
+
+// ── assert API для JS-тестов ─────────────────────────────────────────
+function AssertionError(message) {
+  var err = Error.call(this, message);
+  this.name = "AssertionError";
+  this.message = message;
+  this.stack = err.stack;
+}
+AssertionError.prototype = Object.create(Error.prototype);
+
+function show(v) {
+  try {
+    var s = JSON.stringify(v);
+    return s === undefined ? String(v) : s;
+  } catch (e) { return String(v); }
+}
+
+function deepEqual(a, b) {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  var ka = Object.keys(a), kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  for (var i = 0; i < ka.length; i++) {
+    var k = ka[i];
+    if (!Object.prototype.hasOwnProperty.call(b, k)) return false;
+    if (!deepEqual(a[k], b[k])) return false;
+  }
+  return true;
+}
+
+var assert = function (cond, msg) {
+  if (!cond) throw new AssertionError(msg || "ожидалось истинное значение");
+};
+assert.equal = function (actual, expected, msg) {
+  if (!Object.is(actual, expected)) {
+    throw new AssertionError(msg || "ожидалось " + show(expected) + ", получено " + show(actual));
+  }
+};
+assert.deepEqual = function (actual, expected, msg) {
+  if (!deepEqual(actual, expected)) {
+    throw new AssertionError(msg || "ожидалось " + show(expected) + ", получено " + show(actual));
+  }
+};
+assert.throws = async function (fn, msg) {
+  try { await fn(); } catch (e) { return; }
+  throw new AssertionError(msg || "ожидалось исключение");
+};
+
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+var AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+function errText(e) {
+  if (e && e.name === "AssertionError") return e.message;
+  if (e instanceof Error) return e.name + ": " + e.message;
+  return String(e);
+}
+
+async function runJs(code, tests) {
+  if (tests.length === 0) {
+    await new AsyncFunction("assert", "sleep", '"use strict";\n' + code)(assert, sleep);
+    return [];
+  }
+  var results = [];
+  for (var i = 0; i < tests.length; i++) {
+    var t = tests[i];
+    try {
+      // код пользователя + тест в общем скоупе; каждый тест — свежий прогон
+      await new AsyncFunction(
+        "assert", "sleep",
+        '"use strict";\n' + code + "\n;\n" + t.code
+      )(assert, sleep);
+      results.push({ name: t.name, hidden: t.hidden, passed: true });
+    } catch (e) {
+      results.push({ name: t.name, hidden: t.hidden, passed: false, error: errText(e) });
+    }
+  }
+  return results;
+}
+
+// ── Python через Pyodide (CPython в WebAssembly) ─────────────────────
+function getPyodide() {
+  if (!pyodideReady) {
+    send({ type: "status", text: "Загрузка Python (Pyodide, ~10 МБ, кэшируется)…" });
+    importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js");
+    pyodideReady = self.loadPyodide({
+      stdout: function (text) { send({ type: "console", level: "log", text: text }); },
+      stderr: function (text) { send({ type: "console", level: "error", text: text }); },
+    });
+  }
+  return pyodideReady;
+}
+
+function pyError(e) {
+  var msg = e && e.message ? String(e.message) : String(e);
+  var lines = msg.trim().split("\n");
+  return lines[lines.length - 1];
+}
+
+async function runPy(code, tests) {
+  var py = await getPyodide();
+  if (tests.length === 0) {
+    await py.runPythonAsync(code);
+    return [];
+  }
+  var results = [];
+  for (var i = 0; i < tests.length; i++) {
+    var t = tests[i];
+    var globals = py.globals.get("dict")();
+    try {
+      await py.runPythonAsync(code + "\n\n" + t.code, { globals: globals });
+      results.push({ name: t.name, hidden: t.hidden, passed: true });
+    } catch (e) {
+      results.push({ name: t.name, hidden: t.hidden, passed: false, error: pyError(e) });
+    } finally {
+      globals.destroy();
+    }
+  }
+  return results;
+}
+
+self.onmessage = async function (ev) {
+  var msg = ev.data;
+  if (!msg || msg.type !== "run") return;
+  var started = Date.now();
+  try {
+    var results = msg.language === "python"
+      ? await runPy(msg.code, msg.tests)
+      : await runJs(msg.code, msg.tests);
+    send({ type: "result", ok: true, tests: results, durationMs: Date.now() - started });
+  } catch (e) {
+    send({ type: "result", ok: false, error: errText(e) });
+  }
+};
+</script>
+
+<script>
+"use strict";
+
+var worker = null;
+var current = null; // { id, timer }
+
+function post(msg) { parent.postMessage(msg, "*"); }
+
+function finish(resultMsg) {
+  if (!current) return;
+  clearTimeout(current.timer);
+  current = null;
+  post(resultMsg);
+}
+
+function ensureWorker() {
+  if (!worker) {
+    var src = document.getElementById("worker-src").textContent;
+    var url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+    worker = new Worker(url);
+    worker.onmessage = function (ev) {
+      if (!current) return;
+      var m = ev.data;
+      if (m.type === "console") {
+        post({ kind: "sp-console", id: current.id, level: m.level, text: m.text });
+      } else if (m.type === "status") {
+        post({ kind: "sp-status", id: current.id, text: m.text });
+      } else if (m.type === "result") {
+        finish(
+          m.ok
+            ? { kind: "sp-result", id: current.id, ok: true, tests: m.tests, durationMs: m.durationMs }
+            : { kind: "sp-result", id: current.id, ok: false, error: m.error }
+        );
+      }
+    };
+    worker.onerror = function (ev) {
+      // синтаксическая ошибка на этапе создания воркера и т.п.
+      finish({
+        kind: "sp-result",
+        id: current ? current.id : "",
+        ok: false,
+        error: ev.message || "Ошибка выполнения",
+      });
+    };
+  }
+  return worker;
+}
+
+window.addEventListener("message", function (ev) {
+  var msg = ev.data;
+  if (!msg || msg.kind !== "sp-run") return;
+  if (current) {
+    post({ kind: "sp-result", id: msg.id, ok: false, error: "Песочница занята — дождитесь завершения" });
+    return;
+  }
+  current = {
+    id: msg.id,
+    timer: setTimeout(function () {
+      // жёсткий стоп: убиваем воркер (бесконечный цикл нельзя прервать иначе)
+      if (worker) { worker.terminate(); worker = null; }
+      finish({
+        kind: "sp-result",
+        id: msg.id,
+        ok: false,
+        error: "Превышен лимит времени (" + Math.round(msg.timeoutMs / 1000) + " c) — возможно, бесконечный цикл",
+      });
+    }, msg.timeoutMs),
+  };
+  ensureWorker().postMessage({
+    type: "run",
+    language: msg.language,
+    code: msg.code,
+    tests: msg.tests,
+  });
+});
+
+post({ kind: "sp-ready" });
+</script>
+</body>
+</html>

@@ -8,6 +8,8 @@ import {
   listQuestions,
   QUESTIONS_PAGE_SIZE,
 } from "@/features/questions/queries";
+import { getReviewBadges } from "@/features/review/queries";
+import { auth } from "@/lib/auth";
 import {
   DIFFICULTY_LABELS,
   TOPIC_LABELS,
@@ -58,6 +60,14 @@ export default async function QuestionsPage({
     page,
   });
   const totalPages = Math.max(1, Math.ceil(total / QUESTIONS_PAGE_SIZE));
+
+  const session = await auth();
+  const reviewBadges = session?.user?.id
+    ? await getReviewBadges(
+        session.user.id,
+        items.map((i) => i.slug)
+      )
+    : new Map<string, "due" | "scheduled">();
 
   return (
     <div className="space-y-6">
@@ -134,7 +144,11 @@ export default async function QuestionsPage({
       ) : (
         <div className="grid gap-3">
           {items.map((item) => (
-            <QuestionCard key={item.slug} question={item} />
+            <QuestionCard
+              key={item.slug}
+              question={item}
+              reviewBadge={reviewBadges.get(item.slug) ?? null}
+            />
           ))}
         </div>
       )}
