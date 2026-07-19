@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/card";
 import { createMockSession } from "@/features/mock/actions";
 import {
+  DEFAULT_MOCK_CHALLENGES,
   DEFAULT_MOCK_COUNT,
   DEFAULT_MOCK_DURATION_MIN,
+  MOCK_CHALLENGE_COUNTS,
   MOCK_COUNTS,
   MOCK_DURATIONS_MIN,
 } from "@/features/mock/config";
@@ -105,6 +107,20 @@ export default async function MockPage() {
               className="block h-9 rounded-md border bg-background px-3 text-sm"
             >
               {MOCK_COUNTS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="font-medium">Coding-задач</span>
+            <select
+              name="challenges"
+              defaultValue={DEFAULT_MOCK_CHALLENGES}
+              className="block h-9 rounded-md border bg-background px-3 text-sm"
+            >
+              {MOCK_CHALLENGE_COUNTS.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

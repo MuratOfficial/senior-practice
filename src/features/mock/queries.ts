@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db/prisma";
-import type { MockConfig, MockItem } from "./config";
+import { normalizeMockItem, type MockConfig, type MockItem } from "./config";
 
 export interface MockSessionDetail {
   id: string;
@@ -29,7 +29,7 @@ export async function getMockSession(
   return {
     id: row.id,
     config: row.config as unknown as MockConfig,
-    items: row.items as unknown as MockItem[],
+    items: (row.items as unknown as MockItem[]).map(normalizeMockItem),
     score: row.score,
     startedAt: row.startedAt,
     finishedAt: row.finishedAt,

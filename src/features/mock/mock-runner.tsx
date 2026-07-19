@@ -2,21 +2,33 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Flag, TimerIcon } from "lucide-react";
+import { ExternalLink, Eye, Flag, TimerIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  DIFFICULTY_LABELS,
-  TOPIC_LABELS,
-} from "@/features/questions/topics";
 import { finishMockSession } from "./actions";
-import type { MockItem } from "./config";
 
-const RATINGS = [
+/** Элемент для раннера: метки посчитаны на сервере (тема/категория, сложность) */
+export interface RunnerItem {
+  itemType: "question" | "challenge";
+  slug: string;
+  title: string;
+  topicLabel: string;
+  difficultyLabel: string;
+  /** Акцентный бейдж сложности (senior / hard) */
+  accent: boolean;
+}
+
+const QUESTION_RATINGS = [
   { label: "Не знал", quality: 1 },
   { label: "Частично", quality: 3 },
   { label: "Знал", quality: 5 },
+] as const;
+
+const CHALLENGE_RATINGS = [
+  { label: "Не решил", quality: 1 },
+  { label: "Частично", quality: 3 },
+  { label: "Решил", quality: 5 },
 ] as const;
 
 function formatRemaining(ms: number): string {
@@ -27,8 +39,10 @@ function formatRemaining(ms: number): string {
 }
 
 /**
- * Режим интервью: вопросы по одному, таймер, самооценка после раскрытия
- * ответа. Панели вопросов/ответов отрендерены на сервере и приходят слотами.
+ * Режим интервью: вопросы и coding-задачи по одному, таймер, самооценка после
+ * раскрытия ответа/разбора. Панели контента отрендерены на сервере (слоты).
+ * Задачу можно открыть в отдельной вкладке и решить в песочнице — здесь
+ * фиксируется только самооценка.
  */
 export function MockRunner({
   sessionId,
@@ -38,7 +52,7 @@ export function MockRunner({
   answerPanels,
 }: {
   sessionId: string;
-  items: Omit<MockItem, "quality">[];
+  items: RunnerItem[];
   deadlineIso: string;
   questionPanels: React.ReactNode[];
   answerPanels: React.ReactNode[];
@@ -66,6 +80,8 @@ export function MockRunner({
   const finished = idx >= items.length;
   const ratedCount = ratings.filter((r) => r !== null).length;
   const timeUp = remainingMs <= 0;
+  const current = finished ? null : items[idx];
+  const isChallenge = current?.itemType === "challenge";
 
   function advance(quality: number | null) {
     setRatings((prev) => {
@@ -101,7 +117,7 @@ export function MockRunner({
         <span className="text-sm text-muted-foreground">
           {finished
             ? `Оценено: ${ratedCount} из ${items.length}`
-            : `Вопрос ${idx + 1} из ${items.length}`}
+            : `${isChallenge ? "Задача" : "Вопрос"} ${idx + 1} из ${items.length}`}
         </span>
         <div className="flex items-center gap-3">
           <span
@@ -126,29 +142,41 @@ export function MockRunner({
         </div>
       </div>
 
-      {!finished ? (
+      {current ? (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{TOPIC_LABELS[items[idx].topic]}</Badge>
-            <Badge
-              variant={
-                items[idx].difficulty === "senior" ? "default" : "secondary"
-              }
-            >
-              {DIFFICULTY_LABELS[items[idx].difficulty]}
+            <Badge variant="outline">{current.topicLabel}</Badge>
+            <Badge variant={current.accent ? "default" : "secondary"}>
+              {current.difficultyLabel}
             </Badge>
           </div>
-          <h2 className="text-xl font-bold tracking-tight">
-            {items[idx].title}
-          </h2>
+          <h2 className="text-xl font-bold tracking-tight">{current.title}</h2>
 
           {questionPanels[idx]}
+
+          {isChallenge && (
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={
+                <a
+                  href={`/challenges/${current.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                />
+              }
+            >
+              <ExternalLink className="size-4" />
+              Открыть задачу в песочнице
+            </Button>
+          )}
 
           {!revealed ? (
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => setRevealed(true)}>
                 <Eye className="size-4" />
-                Показать ответ
+                {isChallenge ? "Показать разбор" : "Показать ответ"}
               </Button>
               <Button variant="ghost" onClick={() => advance(null)}>
                 Пропустить
@@ -159,18 +187,22 @@ export function MockRunner({
               <div className="rounded-lg border p-4">{answerPanels[idx]}</div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Насколько хорошо вы ответили?
+                  {isChallenge
+                    ? "Удалось ли решить задачу?"
+                    : "Насколько хорошо вы ответили?"}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {RATINGS.map((r) => (
-                    <Button
-                      key={r.quality}
-                      variant="outline"
-                      onClick={() => advance(r.quality)}
-                    >
-                      {r.label}
-                    </Button>
-                  ))}
+                  {(isChallenge ? CHALLENGE_RATINGS : QUESTION_RATINGS).map(
+                    (r) => (
+                      <Button
+                        key={r.quality}
+                        variant="outline"
+                        onClick={() => advance(r.quality)}
+                      >
+                        {r.label}
+                      </Button>
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -180,7 +212,7 @@ export function MockRunner({
         <div className="flex flex-col items-center gap-4 rounded-lg border py-12 text-center">
           <p className="text-lg font-semibold">Интервью пройдено</p>
           <p className="text-sm text-muted-foreground">
-            Оценено {ratedCount} из {items.length} вопросов. Оценки уйдут в
+            Оценено {ratedCount} из {items.length}. Оценки вопросов уйдут в
             систему повторения (SM-2).
           </p>
           <Button disabled={isPending} onClick={() => submit(ratings)}>
@@ -197,7 +229,7 @@ export function MockRunner({
                 setRevealed(false);
               }}
             >
-              Вернуться к неоценённым вопросам
+              Вернуться к неоценённым
             </Button>
           )}
           {error && <p className="text-xs text-destructive">{error}</p>}

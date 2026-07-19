@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
+import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
 import { Prisma } from "@/generated/prisma/client";
 
 const toggleBookmarkSchema = z.object({
@@ -19,6 +20,14 @@ export async function toggleBookmark(input: {
 }): Promise<ToggleBookmarkResult> {
   const session = await auth();
   if (!session?.user?.id) return { error: "Не авторизован" };
+  if (
+    !(await checkRateLimit(session.user.id, "toggle-bookmark", {
+      limit: 60,
+      windowSec: 60,
+    }))
+  ) {
+    return { error: RATE_LIMIT_ERROR };
+  }
 
   const parsed = toggleBookmarkSchema.safeParse(input);
   if (!parsed.success) return { error: "Некорректный запрос" };

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
+import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
 
 const saveSnippetSchema = z.object({
   language: z.enum(["javascript", "typescript", "python"]),
@@ -17,6 +18,14 @@ export async function saveSnippet(input: {
 }): Promise<SaveSnippetResult> {
   const session = await auth();
   if (!session?.user?.id) return { error: "Не авторизован" };
+  if (
+    !(await checkRateLimit(session.user.id, "save-snippet", {
+      limit: 10,
+      windowSec: 60,
+    }))
+  ) {
+    return { error: RATE_LIMIT_ERROR };
+  }
 
   const parsed = saveSnippetSchema.safeParse(input);
   if (!parsed.success) return { error: "Некорректный запрос" };

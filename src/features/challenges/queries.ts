@@ -163,3 +163,19 @@ export async function getChallengeTestCounts(
   const languages = languagesJsonSchema.parse(challenge.languages);
   return new Map(languages.map((l) => [l.id, l.tests.length]));
 }
+
+/** Условие и разбор задач для mock-сессии (порядок — как в slugs). */
+export async function listChallengeContentBySlugs(
+  slugs: string[]
+): Promise<{ slug: string; statement: string; explanation: string }[]> {
+  if (slugs.length === 0) return [];
+  const rows = await prisma.challenge.findMany({
+    where: { slug: { in: slugs }, status: "published" },
+    select: { slug: true, statement: true, explanation: true },
+  });
+  const bySlug = new Map(rows.map((r) => [r.slug, r]));
+  return slugs.flatMap((slug) => {
+    const row = bySlug.get(slug);
+    return row ? [row] : [];
+  });
+}

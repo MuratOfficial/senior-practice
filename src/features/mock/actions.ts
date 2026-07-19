@@ -5,14 +5,18 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
+import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
 import { TOPICS, type Topic } from "@/features/questions/topics";
 import { applySm2Rating } from "@/features/review/apply-rating";
 import type { Sm2Quality } from "@/features/review/sm2";
 import {
+  DEFAULT_MOCK_CHALLENGES,
   DEFAULT_MOCK_COUNT,
   DEFAULT_MOCK_DURATION_MIN,
+  MOCK_CHALLENGE_COUNTS,
   MOCK_COUNTS,
   MOCK_DURATIONS_MIN,
+  normalizeMockItem,
   type MockConfig,
   type MockItem,
 } from "./config";
@@ -31,6 +35,15 @@ function shuffle<T>(input: T[]): T[] {
 export async function createMockSession(formData: FormData): Promise<void> {
   const session = await auth();
   if (!session?.user?.id) redirect("/signin");
+  // Лимит превышен — молча возвращаем на конфигуратор (форма без состояния ошибки)
+  if (
+    !(await checkRateLimit(session.user.id, "create-mock", {
+      limit: 6,
+      windowSec: 60,
+    }))
+  ) {
+    redirect("/mock");
+  }
 
   const selected = formData
     .getAll("topics")
@@ -50,22 +63,60 @@ export async function createMockSession(formData: FormData): Promise<void> {
     ? durationRaw
     : DEFAULT_MOCK_DURATION_MIN;
 
-  const questions = await prisma.question.findMany({
-    where: { status: "published", topic: { in: topics } },
-    select: { slug: true, topic: true, difficulty: true, title: true },
-  });
+  const challengesRaw = Number(formData.get("challenges"));
+  const challengeCount = (MOCK_CHALLENGE_COUNTS as readonly number[]).includes(
+    challengesRaw
+  )
+    ? challengesRaw
+    : DEFAULT_MOCK_CHALLENGES;
+
+  const [questions, challenges] = await Promise.all([
+    prisma.question.findMany({
+      where: { status: "published", topic: { in: topics } },
+      select: { slug: true, topic: true, difficulty: true, title: true },
+    }),
+    challengeCount > 0
+      ? prisma.challenge.findMany({
+          where: { status: "published" },
+          select: { slug: true, category: true, difficulty: true, title: true },
+        })
+      : [],
+  ]);
   if (questions.length === 0) redirect("/mock");
 
-  const items: MockItem[] = shuffle(questions)
-    .slice(0, count)
-    .map((q) => ({
-      slug: q.slug,
-      topic: q.topic as Topic,
-      difficulty: q.difficulty,
-      title: q.title,
-      quality: null,
-    }));
-  const config: MockConfig = { topics, count: items.length, durationMin };
+  // Вопросы — в начале, coding-задачи — в конце, как на реальном интервью
+  const items: MockItem[] = [
+    ...shuffle(questions)
+      .slice(0, count)
+      .map(
+        (q): MockItem => ({
+          itemType: "question",
+          slug: q.slug,
+          topic: q.topic,
+          difficulty: q.difficulty,
+          title: q.title,
+          quality: null,
+        })
+      ),
+    ...shuffle(challenges)
+      .slice(0, challengeCount)
+      .map(
+        (c): MockItem => ({
+          itemType: "challenge",
+          slug: c.slug,
+          topic: c.category,
+          difficulty: c.difficulty,
+          title: c.title,
+          quality: null,
+        })
+      ),
+  ];
+  const config: MockConfig = {
+    topics,
+    count: items.filter((i) => i.itemType === "question").length,
+    challengeCount: items.filter((i) => i.itemType === "challenge").length,
+    durationMin,
+  };
 
   const created = await prisma.mockSession.create({
     data: {
@@ -104,6 +155,11 @@ export async function finishMockSession(input: {
   const session = await auth();
   if (!session?.user?.id) return { error: "Не авторизован" };
   const userId = session.user.id;
+  if (
+    !(await checkRateLimit(userId, "finish-mock", { limit: 12, windowSec: 60 }))
+  ) {
+    return { error: RATE_LIMIT_ERROR };
+  }
 
   const parsed = finishSchema.safeParse(input);
   if (!parsed.success) return { error: "Некорректный запрос" };
@@ -114,14 +170,15 @@ export async function finishMockSession(input: {
   if (row.finishedAt) return { error: "Сессия уже завершена" };
 
   const qualityBySlug = new Map(ratings.map((r) => [r.slug, r.quality]));
-  const items = (row.items as unknown as MockItem[]).map((item) => ({
-    ...item,
-    quality: qualityBySlug.get(item.slug) ?? null,
-  }));
+  const items = (row.items as unknown as MockItem[]).map((raw) => {
+    const item = normalizeMockItem(raw);
+    return { ...item, quality: qualityBySlug.get(item.slug) ?? null };
+  });
   const score = computeScore(items);
 
+  // В SM-2 уходят только вопросы: у задач прогресс отслеживается сабмишенами
   for (const item of items) {
-    if (item.quality !== null) {
+    if (item.itemType === "question" && item.quality !== null) {
       await applySm2Rating(userId, item.slug, item.quality as Sm2Quality);
     }
   }

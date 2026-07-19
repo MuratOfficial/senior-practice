@@ -236,3 +236,10 @@ model LearningPath {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 }
+
+/// Fixed-window rate limit для мутирующих server actions; key = "{action}:{userId}"
+model RateLimit {
+  key         String   @id
+  windowStart DateTime
+  count       Int      @default(1)
+}

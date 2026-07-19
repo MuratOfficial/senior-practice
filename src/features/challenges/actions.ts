@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
+import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
 import { getChallengeTestCounts } from "./queries";
 
 const submitSchema = z.object({
@@ -36,6 +37,14 @@ export async function submitChallenge(input: {
 }): Promise<SubmitResult> {
   const session = await auth();
   if (!session?.user?.id) return { error: "Не авторизован" };
+  if (
+    !(await checkRateLimit(session.user.id, "submit-challenge", {
+      limit: 20,
+      windowSec: 60,
+    }))
+  ) {
+    return { error: RATE_LIMIT_ERROR };
+  }
 
   const parsed = submitSchema.safeParse(input);
   if (!parsed.success) return { error: "Некорректный запрос" };
