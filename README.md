@@ -47,6 +47,7 @@ src/lib/auth.ts    Auth.js v5 (JWT-сессии, Prisma-адаптер)
 src/lib/db/        prisma.ts (singleton, adapter-pg)
 src/env.ts         Zod-валидация переменных окружения
 tests/             Vitest: парсинг контента + валидация всех файлов content/
+e2e/               Playwright: критические пути под отдельным e2e-пользователем
 docs/              архитектура и план
 ```
 
@@ -56,9 +57,10 @@ docs/              архитектура и план
 npm run lint       # ESLint
 npm run typecheck  # tsc --noEmit
 npm test           # Vitest: unit + валидация контента (dry-run сида)
+npm run test:e2e   # Playwright: критические пути (нужны Postgres + сид; браузер: npx playwright install chromium)
 ```
 
-То же самое гоняет CI (GitHub Actions) на каждый push/PR. Битый frontmatter или отсутствующий маркер `<!-- answer -->` в `content/` валит CI до попадания в прод.
+То же самое гоняет CI (GitHub Actions) на каждый push/PR: job `checks` (lint, typecheck, unit) и job `e2e` (Playwright против реального Postgres с сидом). Битый frontmatter или отсутствующий маркер `<!-- answer -->` в `content/` валит CI до попадания в прод.
 
 ## База данных
 

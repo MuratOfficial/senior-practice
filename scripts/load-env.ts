@@ -1,2 +1,7 @@
 // Side-effect модуль: загружает .env до импорта src/env.ts в CLI-скриптах.
-process.loadEnvFile();
+// В CI файла .env нет — переменные приходят из окружения.
+try {
+  process.loadEnvFile();
+} catch {
+  // нет .env — не ошибка
+}

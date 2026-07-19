@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "seed": "tsx scripts/seed-content.ts",
     "postinstall": "prisma generate && node scripts/copy-vendor.mjs",
     "vercel-build": "prisma migrate deploy && next build"
@@ -39,6 +40,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^20",
