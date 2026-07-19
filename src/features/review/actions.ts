@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
-import { SM2_INITIAL, nextDueAt, sm2, type Sm2Quality } from "./sm2";
+import { applySm2Rating } from "./apply-rating";
+import type { Sm2Quality } from "./sm2";
 
 const rateQuestionSchema = z.object({
   slug: z.string().min(1),
@@ -34,18 +35,9 @@ export async function rateQuestion(input: {
   });
   if (!question) return { error: "Вопрос не найден" };
 
-  const where = { userId_questionSlug: { userId, questionSlug: slug } };
-  const existing = await prisma.reviewState.findUnique({ where });
-  const next = sm2(existing ?? SM2_INITIAL, quality);
-  const dueAt = nextDueAt(next.interval);
-
-  await prisma.reviewState.upsert({
-    where,
-    update: { ...next, dueAt },
-    create: { userId, questionSlug: slug, ...next, dueAt },
-  });
+  const interval = await applySm2Rating(userId, slug, quality);
 
   // Обновляем и очередь повторения, и бейдж в сайдбаре (живёт в layout)
   revalidatePath("/", "layout");
-  return { interval: next.interval };
+  return { interval };
 }

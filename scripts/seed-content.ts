@@ -6,9 +6,11 @@ import { topicSchema } from "@/features/questions/content-schema";
 import { parseQuestionFile } from "@/features/questions/parse-question-file";
 import { challengeCategorySchema } from "@/features/challenges/content-schema";
 import { parseChallengeFile } from "@/features/challenges/parse-challenge-file";
+import { learningPathFileSchema } from "@/features/paths/content-schema";
 
 const QUESTIONS_DIR = path.join(process.cwd(), "content", "questions");
 const CHALLENGES_DIR = path.join(process.cwd(), "content", "challenges");
+const PATHS_DIR = path.join(process.cwd(), "content", "paths");
 
 interface SeedStats {
   upserted: number;
@@ -134,22 +136,96 @@ async function seedChallenges(): Promise<SeedStats> {
   return stats;
 }
 
+/** Треки: content/paths/*.json → LearningPath; ссылки проверяются по уже засеянному контенту. */
+async function seedPaths(): Promise<SeedStats> {
+  const stats: SeedStats = { upserted: 0, pruned: 0, errors: [] };
+  const seenSlugs: string[] = [];
+
+  let files: string[];
+  try {
+    files = (await readdir(PATHS_DIR)).filter((f) => f.endsWith(".json"));
+  } catch {
+    stats.errors.push(`Не найдена директория контента: ${PATHS_DIR}`);
+    return stats;
+  }
+
+  const [questionSlugs, challengeSlugs] = await Promise.all([
+    prisma.question
+      .findMany({ where: { status: "published" }, select: { slug: true } })
+      .then((rows) => new Set(rows.map((r) => r.slug))),
+    prisma.challenge
+      .findMany({ where: { status: "published" }, select: { slug: true } })
+      .then((rows) => new Set(rows.map((r) => r.slug))),
+  ]);
+
+  for (const file of files) {
+    const slug = path.basename(file, ".json");
+    try {
+      const raw = await readFile(path.join(PATHS_DIR, file), "utf-8");
+      const parsed = learningPathFileSchema.parse(JSON.parse(raw));
+
+      const broken = parsed.sections
+        .flatMap((s) => s.items)
+        .filter((i) =>
+          i.type === "question"
+            ? !questionSlugs.has(i.slug)
+            : !challengeSlugs.has(i.slug)
+        );
+      if (broken.length > 0) {
+        throw new Error(
+          `битые ссылки: ${broken.map((i) => `${i.type}:${i.slug}`).join(", ")}`
+        );
+      }
+
+      const data = {
+        title: parsed.title,
+        description: parsed.description,
+        sections: parsed.sections,
+        status: parsed.status,
+      };
+      await prisma.learningPath.upsert({
+        where: { slug },
+        update: data,
+        create: { slug, ...data },
+      });
+      seenSlugs.push(slug);
+      stats.upserted += 1;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      stats.errors.push(`paths/${file}: ${message}`);
+    }
+  }
+
+  if (stats.errors.length === 0) {
+    const pruned = await prisma.learningPath.updateMany({
+      where: { slug: { notIn: seenSlugs }, status: "published" },
+      data: { status: "draft" },
+    });
+    stats.pruned = pruned.count;
+  }
+
+  return stats;
+}
+
 async function main() {
   const questions = await seedQuestions();
   const challenges = await seedChallenges();
+  const paths = await seedPaths();
 
   console.log(`✓ Вопросов загружено/обновлено: ${questions.upserted}`);
   console.log(`✓ Задач загружено/обновлено: ${challenges.upserted}`);
+  console.log(`✓ Треков загружено/обновлено: ${paths.upserted}`);
   for (const [label, stats] of [
     ["вопросов", questions],
     ["задач", challenges],
+    ["треков", paths],
   ] as const) {
     if (stats.pruned > 0) {
       console.log(`✓ Снято с публикации ${label} (файл удалён): ${stats.pruned}`);
     }
   }
 
-  const errors = [...questions.errors, ...challenges.errors];
+  const errors = [...questions.errors, ...challenges.errors, ...paths.errors];
   if (errors.length > 0) {
     console.error(`✗ Ошибок: ${errors.length}`);
     for (const err of errors) console.error(`  - ${err}`);

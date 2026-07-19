@@ -4,6 +4,7 @@ import {
   Code2,
   FlaskConical,
   LayoutDashboard,
+  Map,
   RefreshCw,
   Timer,
   type LucideIcon,
@@ -34,6 +35,12 @@ export const navItems: NavItem[] = [
     href: "/challenges",
     icon: Code2,
     description: "Практические задачи с автопроверкой",
+  },
+  {
+    title: "Треки",
+    href: "/paths",
+    icon: Map,
+    description: "Учебные планы по ролям с прогрессом",
   },
   {
     title: "Playground",

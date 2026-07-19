@@ -1,0 +1,65 @@
+{
+  "title": "Senior Frontend",
+  "description": "Трек для фронтенд-инженера: JavaScript под капотом, TypeScript, React и веб-платформа — от event loop до производительности и безопасности.",
+  "sections": [
+    {
+      "title": "JavaScript Core",
+      "items": [
+        { "type": "question", "slug": "javascript-event-loop" },
+        { "type": "question", "slug": "javascript-closures" },
+        { "type": "question", "slug": "javascript-promises-async" },
+        { "type": "question", "slug": "javascript-prototypes" },
+        { "type": "question", "slug": "javascript-this-binding" },
+        { "type": "question", "slug": "javascript-garbage-collection" },
+        { "type": "question", "slug": "javascript-iterators-generators" },
+        { "type": "question", "slug": "javascript-modules-esm-cjs" }
+      ]
+    },
+    {
+      "title": "TypeScript",
+      "items": [
+        { "type": "question", "slug": "typescript-structural-typing" },
+        { "type": "question", "slug": "typescript-type-vs-interface" },
+        { "type": "question", "slug": "typescript-unknown-any-never" },
+        { "type": "question", "slug": "typescript-narrowing-guards" },
+        { "type": "question", "slug": "typescript-generics-conditional" },
+        { "type": "question", "slug": "typescript-utility-mapped-types" }
+      ]
+    },
+    {
+      "title": "React",
+      "items": [
+        { "type": "question", "slug": "react-reconciliation" },
+        { "type": "question", "slug": "react-hooks-internals" },
+        { "type": "question", "slug": "react-useeffect-lifecycle" },
+        { "type": "question", "slug": "react-rerenders-memo" },
+        { "type": "question", "slug": "react-state-management" },
+        { "type": "question", "slug": "react-concurrent-suspense" },
+        { "type": "question", "slug": "react-server-components" }
+      ]
+    },
+    {
+      "title": "Веб-платформа",
+      "items": [
+        { "type": "question", "slug": "web-http-caching" },
+        { "type": "question", "slug": "web-web-performance" },
+        { "type": "question", "slug": "web-cors" },
+        { "type": "question", "slug": "web-web-security-xss-csrf" },
+        { "type": "question", "slug": "web-auth-sessions-jwt" },
+        { "type": "question", "slug": "web-http-versions" }
+      ]
+    },
+    {
+      "title": "Практика: JS и async",
+      "items": [
+        { "type": "challenge", "slug": "javascript-debounce" },
+        { "type": "challenge", "slug": "javascript-memoize" },
+        { "type": "challenge", "slug": "javascript-event-emitter" },
+        { "type": "challenge", "slug": "javascript-lru-cache" },
+        { "type": "challenge", "slug": "async-promise-all" },
+        { "type": "challenge", "slug": "async-promise-pool" },
+        { "type": "challenge", "slug": "algorithms-two-sum" }
+      ]
+    }
+  ]
+}

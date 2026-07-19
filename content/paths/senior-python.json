@@ -1,0 +1,52 @@
+{
+  "title": "Senior Python",
+  "description": "Трек для Python-инженера: GIL и asyncio, генераторы и типизация, базы данных и архитектура сервисов.",
+  "sections": [
+    {
+      "title": "Python Core",
+      "items": [
+        { "type": "question", "slug": "python-gil-concurrency" },
+        { "type": "question", "slug": "python-asyncio" },
+        { "type": "question", "slug": "python-generators-lazy" },
+        { "type": "question", "slug": "python-decorators-context" },
+        { "type": "question", "slug": "python-memory-mutability" },
+        { "type": "question", "slug": "python-typing-dataclasses" }
+      ]
+    },
+    {
+      "title": "Базы данных",
+      "items": [
+        { "type": "question", "slug": "databases-sql-vs-nosql" },
+        { "type": "question", "slug": "databases-transactions-isolation" },
+        { "type": "question", "slug": "databases-indexes" },
+        { "type": "question", "slug": "databases-n-plus-one" },
+        { "type": "question", "slug": "databases-normalization" }
+      ]
+    },
+    {
+      "title": "Архитектура",
+      "items": [
+        { "type": "question", "slug": "architecture-api-design" },
+        { "type": "question", "slug": "architecture-queues-events" },
+        { "type": "question", "slug": "architecture-caching-strategies" },
+        { "type": "question", "slug": "architecture-solid" }
+      ]
+    },
+    {
+      "title": "HTTP и безопасность",
+      "items": [
+        { "type": "question", "slug": "web-cors" },
+        { "type": "question", "slug": "web-auth-sessions-jwt" },
+        { "type": "question", "slug": "web-http-caching" }
+      ]
+    },
+    {
+      "title": "Практика Python",
+      "items": [
+        { "type": "challenge", "slug": "python-chunked" },
+        { "type": "challenge", "slug": "python-top-k-frequent" },
+        { "type": "challenge", "slug": "algorithms-two-sum" }
+      ]
+    }
+  ]
+}

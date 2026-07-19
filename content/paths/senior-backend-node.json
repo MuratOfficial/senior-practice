@@ -1,0 +1,71 @@
+{
+  "title": "Senior Backend (Node)",
+  "description": "Трек для бэкенд-инженера на Node.js: рантайм и streams, базы данных, архитектура сервисов, HTTP и безопасность.",
+  "sections": [
+    {
+      "title": "JavaScript Core",
+      "items": [
+        { "type": "question", "slug": "javascript-event-loop" },
+        { "type": "question", "slug": "javascript-closures" },
+        { "type": "question", "slug": "javascript-promises-async" },
+        { "type": "question", "slug": "javascript-modules-esm-cjs" },
+        { "type": "question", "slug": "javascript-garbage-collection" }
+      ]
+    },
+    {
+      "title": "Node.js",
+      "items": [
+        { "type": "question", "slug": "nodejs-event-loop-node" },
+        { "type": "question", "slug": "nodejs-streams-backpressure" },
+        { "type": "question", "slug": "nodejs-error-handling" },
+        { "type": "question", "slug": "nodejs-scaling-workers" },
+        { "type": "question", "slug": "nodejs-performance-profiling" },
+        { "type": "question", "slug": "nodejs-security" }
+      ]
+    },
+    {
+      "title": "Базы данных",
+      "items": [
+        { "type": "question", "slug": "databases-sql-vs-nosql" },
+        { "type": "question", "slug": "databases-transactions-isolation" },
+        { "type": "question", "slug": "databases-indexes" },
+        { "type": "question", "slug": "databases-n-plus-one" },
+        { "type": "question", "slug": "databases-normalization" },
+        { "type": "question", "slug": "databases-scaling-replication" },
+        { "type": "question", "slug": "databases-migrations-zero-downtime" }
+      ]
+    },
+    {
+      "title": "Архитектура",
+      "items": [
+        { "type": "question", "slug": "architecture-api-design" },
+        { "type": "question", "slug": "architecture-monolith-microservices" },
+        { "type": "question", "slug": "architecture-queues-events" },
+        { "type": "question", "slug": "architecture-caching-strategies" },
+        { "type": "question", "slug": "architecture-solid" },
+        { "type": "question", "slug": "architecture-design-patterns" }
+      ]
+    },
+    {
+      "title": "HTTP и безопасность",
+      "items": [
+        { "type": "question", "slug": "web-cors" },
+        { "type": "question", "slug": "web-auth-sessions-jwt" },
+        { "type": "question", "slug": "web-http-caching" },
+        { "type": "question", "slug": "web-http-versions" },
+        { "type": "question", "slug": "web-web-security-xss-csrf" }
+      ]
+    },
+    {
+      "title": "Практика",
+      "items": [
+        { "type": "challenge", "slug": "async-retry-backoff" },
+        { "type": "challenge", "slug": "async-promise-pool" },
+        { "type": "challenge", "slug": "javascript-deep-equal" },
+        { "type": "challenge", "slug": "javascript-group-by" },
+        { "type": "challenge", "slug": "algorithms-merge-intervals" },
+        { "type": "challenge", "slug": "algorithms-binary-search" }
+      ]
+    }
+  ]
+}

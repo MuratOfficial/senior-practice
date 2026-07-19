@@ -112,6 +112,35 @@ export const getQuestionBySlug = cache(
   }
 );
 
+/** Полные вопросы по набору slug'ов (для mock-сессии); порядок — как в slugs. */
+export async function listQuestionsBySlugs(
+  slugs: string[]
+): Promise<QuestionDetail[]> {
+  if (slugs.length === 0) return [];
+  const docs = await prisma.question.findMany({
+    where: { slug: { in: slugs }, status: "published" },
+  });
+  const bySlug = new Map(docs.map((doc) => [doc.slug, doc]));
+  return slugs.flatMap((slug) => {
+    const doc = bySlug.get(slug);
+    if (!doc) return [];
+    return [
+      {
+        id: doc.id,
+        slug: doc.slug,
+        topic: doc.topic as Topic,
+        difficulty: doc.difficulty,
+        title: doc.title,
+        tags: doc.tags,
+        body: doc.body,
+        answer: doc.answer,
+        followUps: doc.followUps,
+        references: (doc.references as { title: string; url: string }[]) ?? [],
+      },
+    ];
+  });
+}
+
 /** Закладки пользователя на вопросы, свежие первыми (join с контентом по slug). */
 export async function listBookmarkedQuestions(
   userId: string
