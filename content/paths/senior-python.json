@@ -47,6 +47,17 @@
         { "type": "challenge", "slug": "python-top-k-frequent" },
         { "type": "challenge", "slug": "algorithms-two-sum" }
       ]
+    },
+    {
+      "title": "System Design и Behavioral",
+      "items": [
+        { "type": "question", "slug": "system-design-url-shortener" },
+        { "type": "question", "slug": "system-design-rate-limiter" },
+        { "type": "question", "slug": "behavioral-star-method" },
+        { "type": "question", "slug": "behavioral-conflict-disagreement" },
+        { "type": "question", "slug": "behavioral-failure-incident" },
+        { "type": "question", "slug": "behavioral-leadership-influence" }
+      ]
     }
   ]
 }

@@ -66,6 +66,19 @@
         { "type": "challenge", "slug": "algorithms-merge-intervals" },
         { "type": "challenge", "slug": "algorithms-binary-search" }
       ]
+    },
+    {
+      "title": "System Design и Behavioral",
+      "items": [
+        { "type": "question", "slug": "system-design-url-shortener" },
+        { "type": "question", "slug": "system-design-rate-limiter" },
+        { "type": "question", "slug": "system-design-news-feed" },
+        { "type": "question", "slug": "system-design-chat-realtime" },
+        { "type": "question", "slug": "behavioral-star-method" },
+        { "type": "question", "slug": "behavioral-conflict-disagreement" },
+        { "type": "question", "slug": "behavioral-failure-incident" },
+        { "type": "question", "slug": "behavioral-leadership-influence" }
+      ]
     }
   ]
 }

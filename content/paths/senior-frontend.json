@@ -60,6 +60,17 @@
         { "type": "challenge", "slug": "async-promise-pool" },
         { "type": "challenge", "slug": "algorithms-two-sum" }
       ]
+    },
+    {
+      "title": "System Design и Behavioral",
+      "items": [
+        { "type": "question", "slug": "system-design-news-feed" },
+        { "type": "question", "slug": "system-design-chat-realtime" },
+        { "type": "question", "slug": "behavioral-star-method" },
+        { "type": "question", "slug": "behavioral-conflict-disagreement" },
+        { "type": "question", "slug": "behavioral-failure-incident" },
+        { "type": "question", "slug": "behavioral-leadership-influence" }
+      ]
     }
   ]
 }

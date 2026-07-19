@@ -7,6 +7,8 @@ export const TOPICS = [
   "web",
   "databases",
   "architecture",
+  "system-design",
+  "behavioral",
 ] as const;
 
 export type Topic = (typeof TOPICS)[number];
@@ -20,6 +22,8 @@ export const TOPIC_LABELS: Record<Topic, string> = {
   web: "Web / HTTP",
   databases: "Базы данных",
   architecture: "Архитектура",
+  "system-design": "System Design",
+  behavioral: "Behavioral",
 };
 
 export const DIFFICULTIES = ["junior", "middle", "senior"] as const;
