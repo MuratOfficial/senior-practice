@@ -104,6 +104,10 @@ model Question {
 
   @@index([status, topic])
   @@index([status, difficulty])
+  // Триграммные GIN-индексы ускоряют ILIKE '%q%' и similarity() в поиске каталога
+  // (иначе seq scan). Требуют расширения pg_trgm — оно создаётся в миграции.
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([body(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 // ── Домен ────────────────────────────────────────────────────────────
@@ -242,4 +246,7 @@ model RateLimit {
   key         String   @id
   windowStart DateTime
   count       Int      @default(1)
+
+  // Индекс для периодической чистки истёкших окон (иначе таблица растёт вечно)
+  @@index([windowStart])
 }

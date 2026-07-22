@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
+import { isStaleUserError, STALE_SESSION_ERROR } from "@/lib/errors";
 import { applySm2Rating } from "./apply-rating";
 import type { Sm2Quality } from "./sm2";
 
@@ -44,9 +45,20 @@ export async function rateQuestion(input: {
   });
   if (!question) return { error: "Вопрос не найден" };
 
-  const interval = await applySm2Rating(userId, slug, quality);
+  let interval: number;
+  try {
+    interval = await applySm2Rating(userId, slug, quality);
+  } catch (error) {
+    if (isStaleUserError(error)) return { error: STALE_SESSION_ERROR };
+    throw error;
+  }
 
-  // Обновляем и очередь повторения, и бейдж в сайдбаре (живёт в layout)
-  revalidatePath("/", "layout");
+  // Точечно инвалидируем страницы, где изменились данные (не весь layout):
+  // очередь повторения, дашборд и сам вопрос. Бейдж в сайдбаре обновляется
+  // при следующем рендере layout (навигация / router.refresh у вызывающего).
+  revalidatePath("/review");
+  revalidatePath("/review/session");
+  revalidatePath("/dashboard");
+  revalidatePath(`/questions/${slug}`);
   return { interval };
 }

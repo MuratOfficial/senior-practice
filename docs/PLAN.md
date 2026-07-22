@@ -63,13 +63,22 @@
 
 ## Фаза 5 — Полировка и расширение контента
 
-- [ ] Расширение базы: 200+ вопросов (сейчас 68), 80+ задач (сейчас 32)
+- [ ] Расширение базы: 200+ вопросов (сейчас 87), 80+ задач (сейчас 32)
 - [x] Новые темы: System Design (4 разбора: url shortener, лента, rate limiter, чат) и Behavioral (STAR, конфликт, провал, лидерство) — 2026-07-19; секция «System Design и Behavioral» добавлена во все треки
 - [ ] SQL-задачи (проверка через выполнение в отдельной схеме Postgres или sql.js в браузере)
 - [x] Rate limiting: fixed-window в Postgres (`src/lib/rate-limit.ts`) на всех мутирующих actions — 2026-07-19
 - [x] e2e-тесты критических путей (Playwright, `e2e/`): вход, каталог+вопрос+закладки, review, песочница задач, mock-сессия, треки; отдельный job в CI — 2026-07-19
 - [x] CI (lint, typecheck, Vitest + валидация контента как seed dry-run) — GitHub Actions, 2026-07-16
 - [x] Деплой Vercel + Neon подготовлен (vercel-build, prisma migrate deploy, README «Деплой») — 2026-07-16
+
+### Hardening-батч (2026-07-22)
+
+- [x] Юнит-тесты ядра автопроверки: `assert`/`deepEqual` вынесены в блок `#lib-src` runner.html (единый источник для воркера и теста), `tests/sandbox-assert.test.ts` — 10 кейсов (NaN, вложенность, порядок ключей, массив vs объект)
+- [x] Точечный `revalidatePath` в `rateQuestion`/`finishMockSession` вместо `("/", "layout")` — не рушим кэш всего приложения на каждую оценку
+- [x] `listChallenges` — три запроса в один `Promise.all` (был лишний последовательный groupBy)
+- [x] `RateLimit`: ленивая чистка истёкших окон + `@@index([windowStart])` — таблица больше не растёт бесконечно
+- [x] Обработка stale JWT (P2003) во всех actions с FK на userId → `STALE_SESSION_ERROR` (`src/lib/errors.ts`) вместо 500
+- [x] Поиск каталога через pg_trgm: расширение + GIN-индексы на `Question.title`/`body` (миграция `20260722100003`), поиск переписан на raw SQL с ранжированием (`word_similarity` терпит опечатки, вхождения в заголовок первыми) — быстро на 200+ и без seq scan
 
 ## Возможные будущие направления
 

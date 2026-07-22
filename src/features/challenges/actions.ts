@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
+import { isStaleUserError, STALE_SESSION_ERROR } from "@/lib/errors";
 import { getChallengeTestCounts } from "./queries";
 
 const submitSchema = z.object({
@@ -64,18 +65,23 @@ export async function submitChallenge(input: {
       ? "PASSED"
       : "FAILED";
 
-  await prisma.submission.create({
-    data: {
-      userId: session.user.id,
-      challengeSlug: slug,
-      language,
-      code,
-      status,
-      passedTests,
-      totalTests,
-      durationMs,
-    },
-  });
+  try {
+    await prisma.submission.create({
+      data: {
+        userId: session.user.id,
+        challengeSlug: slug,
+        language,
+        code,
+        status,
+        passedTests,
+        totalTests,
+        durationMs,
+      },
+    });
+  } catch (error) {
+    if (isStaleUserError(error)) return { error: STALE_SESSION_ERROR };
+    throw error;
+  }
 
   revalidatePath("/challenges");
   revalidatePath(`/challenges/${slug}`);

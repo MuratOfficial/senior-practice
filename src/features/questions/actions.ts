@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
+import { isStaleUserError, STALE_SESSION_ERROR } from "@/lib/errors";
 import { Prisma } from "@/generated/prisma/client";
 
 const toggleBookmarkSchema = z.object({
@@ -55,6 +56,8 @@ export async function toggleBookmark(input: {
         error.code === "P2002"
       ) {
         bookmarked = true; // параллельный запрос уже создал закладку
+      } else if (isStaleUserError(error)) {
+        return { error: STALE_SESSION_ERROR };
       } else {
         throw error;
       }

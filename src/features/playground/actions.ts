@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
+import { isStaleUserError, STALE_SESSION_ERROR } from "@/lib/errors";
 
 const saveSnippetSchema = z.object({
   language: z.enum(["javascript", "typescript", "python"]),
@@ -30,13 +31,18 @@ export async function saveSnippet(input: {
   const parsed = saveSnippetSchema.safeParse(input);
   if (!parsed.success) return { error: "Некорректный запрос" };
 
-  const snippet = await prisma.snippet.create({
-    data: {
-      userId: session.user.id,
-      language: parsed.data.language,
-      code: parsed.data.code,
-    },
-    select: { id: true },
-  });
-  return { id: snippet.id };
+  try {
+    const snippet = await prisma.snippet.create({
+      data: {
+        userId: session.user.id,
+        language: parsed.data.language,
+        code: parsed.data.code,
+      },
+      select: { id: true },
+    });
+    return { id: snippet.id };
+  } catch (error) {
+    if (isStaleUserError(error)) return { error: STALE_SESSION_ERROR };
+    throw error;
+  }
 }

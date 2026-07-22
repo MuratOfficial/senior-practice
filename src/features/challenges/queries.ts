@@ -48,7 +48,9 @@ export async function listChallenges(
     where.difficulty = filters.difficulty;
   }
 
-  const [challenges, submissions] = await Promise.all([
+  // Два groupBy (все попытки + только PASSED) дают «лучший» статус; параллелим
+  // их с выборкой задач — один round-trip вместо трёх последовательных.
+  const [challenges, submissions, attempted] = await Promise.all([
     prisma.challenge.findMany({
       where,
       orderBy: [{ category: "asc" }, { difficulty: "asc" }, { title: "asc" }],
@@ -65,13 +67,12 @@ export async function listChallenges(
       by: ["challengeSlug"],
       where: { userId, status: "PASSED" },
     }),
-    // FAILED учитываем отдельно ниже — один groupBy не даёт "лучший" статус
+    prisma.submission.groupBy({
+      by: ["challengeSlug"],
+      where: { userId },
+    }),
   ]);
 
-  const attempted = await prisma.submission.groupBy({
-    by: ["challengeSlug"],
-    where: { userId },
-  });
   const passedSlugs = new Set(submissions.map((s) => s.challengeSlug));
   const attemptedSlugs = new Set(attempted.map((s) => s.challengeSlug));
 

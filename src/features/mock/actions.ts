@@ -6,6 +6,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { checkRateLimit, RATE_LIMIT_ERROR } from "@/lib/rate-limit";
+import { isStaleUserError, STALE_SESSION_ERROR } from "@/lib/errors";
 import { TOPICS, type Topic } from "@/features/questions/topics";
 import { applySm2Rating } from "@/features/review/apply-rating";
 import type { Sm2Quality } from "@/features/review/sm2";
@@ -176,23 +177,31 @@ export async function finishMockSession(input: {
   });
   const score = computeScore(items);
 
-  // В SM-2 уходят только вопросы: у задач прогресс отслеживается сабмишенами
-  for (const item of items) {
-    if (item.itemType === "question" && item.quality !== null) {
-      await applySm2Rating(userId, item.slug, item.quality as Sm2Quality);
+  try {
+    // В SM-2 уходят только вопросы: у задач прогресс отслеживается сабмишенами
+    for (const item of items) {
+      if (item.itemType === "question" && item.quality !== null) {
+        await applySm2Rating(userId, item.slug, item.quality as Sm2Quality);
+      }
     }
+
+    await prisma.mockSession.update({
+      where: { id },
+      data: {
+        items: JSON.parse(JSON.stringify(items)),
+        score,
+        finishedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    if (isStaleUserError(error)) return { error: STALE_SESSION_ERROR };
+    throw error;
   }
 
-  await prisma.mockSession.update({
-    where: { id },
-    data: {
-      items: JSON.parse(JSON.stringify(items)),
-      score,
-      finishedAt: new Date(),
-    },
-  });
-
-  // Оценки попали в SM-2 — обновляем бейдж «к повторению» в layout
-  revalidatePath("/", "layout");
+  // Оценки попали в SM-2 — точечно обновляем страницы с этими данными
+  revalidatePath("/review");
+  revalidatePath("/dashboard");
+  revalidatePath(`/mock/${id}`);
+  revalidatePath("/mock");
   return { score };
 }

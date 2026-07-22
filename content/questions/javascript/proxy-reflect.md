@@ -1,0 +1,43 @@
+---
+title: Proxy и Reflect — метапрограммирование и перехват операций
+difficulty: senior
+tags: [proxy, reflect, metaprogramming, traps]
+followUps:
+  - Зачем в ловушке передавать receiver и использовать Reflect вместо прямого доступа?
+  - Какие инварианты Proxy обязан соблюдать и что будет при их нарушении?
+  - Как Proxy используется в реактивности Vue 3 / signals?
+references:
+  - title: "MDN: Proxy"
+    url: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+---
+Что такое Proxy и какие операции он перехватывает? Зачем нужен Reflect и почему его вызывают внутри ловушек с передачей `receiver`? Приведите практический пример и назовите ограничения.
+
+<!-- answer -->
+
+**Proxy** оборачивает объект (target) и перехватывает фундаментальные операции через **ловушки (traps)**: `get`, `set`, `has` (оператор `in`), `deleteProperty`, `apply` (вызов функции), `construct` (`new`), `ownKeys`, `getPrototypeOf` и др. Не перехваченная операция уходит на target напрямую.
+
+```js
+const user = { name: "Ann", age: 30 };
+const guarded = new Proxy(user, {
+  get(target, prop, receiver) {
+    if (prop in target) return Reflect.get(target, prop, receiver);
+    throw new ReferenceError(`нет свойства "${String(prop)}"`);
+  },
+  set(target, prop, value, receiver) {
+    if (prop === "age" && typeof value !== "number")
+      throw new TypeError("age должен быть числом");
+    return Reflect.set(target, prop, value, receiver);
+  },
+});
+```
+
+**Reflect** — объект с методами, повторяющими ловушки один-в-один (`Reflect.get/set/has/...`). Даёт две вещи:
+
+1. **Дефолтное поведение операции** без переизобретения: `Reflect.set` возвращает `boolean` успеха — ровно то, что ожидается вернуть из ловушки `set` (в strict mode прямое `target[prop] = value` в геттере не даст этого протокола).
+2. **Корректный `receiver`.** Это ключевой нюанс: при доступе через прототип-цепочку или геттер `receiver` — это исходный объект, на котором началась операция (может быть сам Proxy). Если внутри `get` написать `target[prop]` вместо `Reflect.get(target, prop, receiver)`, то геттеры внутри target выполнятся с `this === target`, а не с Proxy — и перехват «протечёт» мимо ловушки для вложенных обращений.
+
+**Инварианты.** Proxy обязан не лгать о неизменяемой реальности target: нельзя сообщать `false` в `has` для non-configurable свойства, возвращать из `get` значение, отличное от non-writable/non-configurable свойства, скрывать в `ownKeys` non-configurable ключи. Нарушение → рантайм `TypeError`. Смысл — гарантии для движка и другого кода.
+
+**Применения:** реактивность (Vue 3, `@preact/signals` — `set`-ловушка триггерит перерисовку), валидация/схемы, ленивая инициализация (виртуализация тяжёлых объектов), негативные индексы массива, API-клиенты с динамическими методами, защита от опечаток (как выше).
+
+**Ограничения:** есть накладные расходы (не для горячих путей); `revocable`-прокси можно «отключить» (`proxy.revoke()`), после чего любой доступ бросает; Proxy не «прозрачен» для `===` — обёртка и target это разные ссылки; приватные поля класса (`#x`) не проксируются через чужой Proxy.

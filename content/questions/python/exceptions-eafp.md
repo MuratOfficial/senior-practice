@@ -1,0 +1,69 @@
+---
+title: Исключения и EAFP — цепочки, группы, философия обработки
+difficulty: middle
+tags: [exceptions, eafp, exception-groups, error-handling]
+followUps:
+  - Чем EAFP отличается от LBYL и почему в Python предпочитают первое?
+  - Что делает raise ... from и чем неявная цепочка отличается от явной?
+  - Зачем нужны ExceptionGroup и except* (3.11)?
+references:
+  - title: "Python docs: Errors and Exceptions"
+    url: https://docs.python.org/3/tutorial/errors.html
+---
+Объясните подход EAFP против LBYL на примере. Как работает цепочка исключений (`raise from`, `__cause__`/`__context__`)? Что такое `ExceptionGroup` и `except*`? Какие ошибки типичны в обработке исключений?
+
+<!-- answer -->
+
+**EAFP vs LBYL.** *LBYL* (Look Before You Leap) — проверить условия заранее: `if key in d: use(d[key])`. *EAFP* (Easier to Ask Forgiveness than Permission) — сделать и поймать исключение: `try: use(d[key]) except KeyError: ...`. Python предпочитает **EAFP**, потому что:
+
+- нет **гонки** между проверкой и действием (файл/ключ может исчезнуть между `if` и использованием — TOCTOU);
+- исключения в Python дёшевы на «счастливом пути» (стоят только при возникновении);
+- код читается как основной сценарий без шума проверок.
+
+```python
+# LBYL — есть окно гонки и двойной поиск
+if os.path.exists(path):
+    with open(path) as f: ...   # файл могли удалить между проверкой и open
+
+# EAFP — атомарно и идиоматично
+try:
+    with open(path) as f: ...
+except FileNotFoundError:
+    ...
+```
+
+LBYL уместен, когда проверка дешева, а исключение дорого/семантически неверно (валидация ввода до старта операции).
+
+**Цепочки исключений.** Когда исключение возникает **внутри** обработки другого, Python связывает их:
+
+- **Неявно** — `__context__`: «во время обработки A случилось B». Появляется само.
+- **Явно** — `raise NewError() from original`: устанавливает `__cause__`, печатает «The above exception was the direct cause». Так оборачивают низкоуровневую ошибку в доменную, **не теряя** первопричину:
+
+```python
+try:
+    row = db.execute(sql)
+except psycopg.Error as e:
+    raise RepositoryError("не удалось загрузить пользователя") from e
+```
+
+`raise ... from None` — осознанно **подавить** цепочку, когда исходное исключение — деталь реализации.
+
+**ExceptionGroup и `except*` (3.11).** Когда операций много и упасть могут **несколько сразу** (параллельные таски в `asyncio.TaskGroup`, батч), одно исключение не описывает картину. `ExceptionGroup` несёт **набор** исключений, а `except*` разбирает группу по типам, обрабатывая совпавшие и пробрасывая остальное:
+
+```python
+try:
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(a()); tg.create_task(b())
+except* ValueError as eg:      # все ValueError из группы
+    ...
+except* ConnectionError as eg: # независимо — все ConnectionError
+    ...
+```
+
+**Типичные ошибки:**
+
+- **Голый `except:`** или `except Exception` без нужды — глотает `KeyboardInterrupt`/`SystemExit` (голый) и маскирует баги. Ловите **узкий** тип.
+- `except ...: pass` — молчаливое проглатывание; как минимум логируйте.
+- Потеря первопричины: перевыброс без `from` в новых обёртках теряет контекст трассировки для читателя.
+- Использование исключений как штатного управления потоком там, где хватает обычной логики (кроме идиоматичных `StopIteration`/`KeyError` в EAFP).
+- Слишком широкий `try`: оборачивайте минимальный участок, чтобы не поймать «не своё» исключение.

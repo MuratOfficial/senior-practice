@@ -10,31 +10,15 @@
   origin — нет доступа к кукам/DOM/localStorage приложения). Код пользователя
   выполняется в Web Worker: его можно жёстко убить terminate() по таймауту.
 -->
-<script type="text/worker" id="worker-src">
+<!--
+  assert / deepEqual — ядро автопроверки. Вынесено в отдельный блок как
+  единственный источник истины: воркер собирается из lib-src + worker-src,
+  а Vitest (tests/sandbox-assert.test.ts) читает и исполняет ИМЕННО этот блок.
+  Здесь не должно быть зависимостей от self/postMessage — только чистая логика.
+-->
+<script type="text/sandbox-lib" id="lib-src">
 "use strict";
 
-var pyodideReady = null;
-
-function send(msg) { self.postMessage(msg); }
-
-function fmt(args) {
-  return args.map(function (a) {
-    if (typeof a === "string") return a;
-    if (a instanceof Error) return a.name + ": " + a.message;
-    try {
-      var s = JSON.stringify(a);
-      return s === undefined ? String(a) : s;
-    } catch (e) { return String(a); }
-  }).join(" ");
-}
-
-["log", "warn", "error", "info"].forEach(function (level) {
-  console[level] = function () {
-    send({ type: "console", level: level, text: fmt([].slice.call(arguments)) });
-  };
-});
-
-// ── assert API для JS-тестов ─────────────────────────────────────────
 function AssertionError(message) {
   var err = Error.call(this, message);
   this.name = "AssertionError";
@@ -81,6 +65,31 @@ assert.throws = async function (fn, msg) {
   try { await fn(); } catch (e) { return; }
   throw new AssertionError(msg || "ожидалось исключение");
 };
+</script>
+
+<script type="text/worker" id="worker-src">
+"use strict";
+
+var pyodideReady = null;
+
+function send(msg) { self.postMessage(msg); }
+
+function fmt(args) {
+  return args.map(function (a) {
+    if (typeof a === "string") return a;
+    if (a instanceof Error) return a.name + ": " + a.message;
+    try {
+      var s = JSON.stringify(a);
+      return s === undefined ? String(a) : s;
+    } catch (e) { return String(a); }
+  }).join(" ");
+}
+
+["log", "warn", "error", "info"].forEach(function (level) {
+  console[level] = function () {
+    send({ type: "console", level: level, text: fmt([].slice.call(arguments)) });
+  };
+});
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -187,7 +196,11 @@ function finish(resultMsg) {
 
 function ensureWorker() {
   if (!worker) {
-    var src = document.getElementById("worker-src").textContent;
+    // Воркер = чистые хелперы (lib-src) + рантайм (worker-src): единый источник
+    var src =
+      document.getElementById("lib-src").textContent +
+      "\n" +
+      document.getElementById("worker-src").textContent;
     var url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
     worker = new Worker(url);
     worker.onmessage = function (ev) {
