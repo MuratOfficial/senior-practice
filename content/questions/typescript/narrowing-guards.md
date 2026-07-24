@@ -3,9 +3,16 @@ title: Сужение типов — type guards и discriminated unions
 difficulty: middle
 tags: [narrowing, type-guards, discriminated-unions]
 followUps:
-  - Чем опасны пользовательские предикаты (x is T) и как их валидировать?
-  - Как работает control flow analysis при присваиваниях и замыканиях?
-  - Когда assertion function (asserts x is T) уместнее предиката?
+  - q: "Чем опасны пользовательские предикаты (x is T) и как их валидировать?"
+    a: "Предикат — необеспеченное обещание: тело может вернуть true для неподходящего значения, и компилятор поверит (unsound). Надёжнее — полная проверка формы или схема (Zod) вместо ручного is."
+  - q: "Как работает control flow analysis при присваиваниях и замыканиях?"
+    a: "TS сужает тип по потоку управления (после if/typeof/присваивания). В замыкании/колбэке сужение теряется, если между сужением и использованием переменная могла измениться — тип расширяется обратно."
+  - q: "Когда assertion function (asserts x is T) уместнее предиката?"
+    a: "Когда нужно не ветвление, а гарантия: assert бросает при несоответствии и сужает тип в остатке функции. Удобно для инвариантов и валидации входа (assertIsUser(x))."
+applications:
+  - "Discriminated unions для состояний (loading/success/error) с exhaustive-проверкой."
+  - "Безопасный разбор внешних данных: предикаты/схемы на границе (API, JSON)."
+  - "Инварианты через assertion functions (assert, invariant)."
 references:
   - title: "TypeScript Handbook: Narrowing"
     url: https://www.typescriptlang.org/docs/handbook/2/narrowing.html

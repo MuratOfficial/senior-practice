@@ -3,9 +3,16 @@ title: any, unknown, never и void — семантика и границы ти
 difficulty: middle
 tags: [any, unknown, never, type-safety]
 followUps:
-  - Почему unknown безопаснее any на границах системы (API, JSON.parse)?
-  - Где never появляется «сам» и как использовать его для exhaustive check?
-  - Чем void отличается от undefined в сигнатурах колбэков?
+  - q: "Почему unknown безопаснее any на границах системы (API, JSON.parse)?"
+    a: "any отключает проверки — значение проваливается в код без гарантий. unknown требует сузить тип (проверкой/схемой) перед использованием, заставляя валидировать вход и ловя ошибки на границе."
+  - q: "Где never появляется «сам» и как использовать его для exhaustive check?"
+    a: "never — тип без значений: пустой union, недостижимая ветка, функция, которая всегда бросает. В default свитча const _: never = x даёт ошибку компиляции, если добавили вариант union и забыли обработать."
+  - q: "Чем void отличается от undefined в сигнатурах колбэков?"
+    a: "void означает «возвращаемое значение игнорируется» — колбэк может вернуть что угодно, вызывающий это не использует (Array.forEach). undefined требует буквально undefined. Поэтому (x) => boolean присваивается к () => void."
+applications:
+  - "unknown на границах (JSON.parse, fetch, входные данные) с последующей валидацией."
+  - "never для exhaustive-проверок discriminated unions."
+  - "Точные сигнатуры колбэков (void) без ложных ошибок возврата."
 references:
   - title: "TypeScript Handbook: The types"
     url: https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown

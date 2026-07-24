@@ -3,9 +3,16 @@ title: Дженерики, условные типы и infer
 difficulty: senior
 tags: [generics, conditional-types, infer]
 followUps:
-  - Что такое distributive conditional types и как отключить дистрибутивность?
-  - Как работает вывод типов в дженерик-функциях и когда он ломается?
-  - Напишите тип, извлекающий тип элемента из массива или промиса.
+  - q: "Что такое distributive conditional types и как отключить дистрибутивность?"
+    a: "Условный тип над голым параметром-union применяется к каждому члену отдельно: при T = A|B тип T extends U ? X : Y даёт объединение по A и по B. Отключают, обернув в кортеж: [T] extends [U] ? X : Y."
+  - q: "Как работает вывод типов в дженерик-функциях и когда он ломается?"
+    a: "TS выводит параметры из аргументов по позиции и контексту. Ломается при частичном указании (all-or-nothing), выводе из union или возвращаемого значения — помогают явные аргументы, каррирование или NoInfer."
+  - q: "Напишите тип, извлекающий тип элемента из массива или промиса."
+    a: "type Elem<T> = T extends (infer U)[] ? U : T extends Promise<infer U> ? U : T; — infer захватывает внутренний тип в позиции сопоставления."
+applications:
+  - "Утилити-типы (ReturnType, Awaited, Parameters) и типобезопасные хелперы."
+  - "Вывод типов из данных: элемент массива, распаковка Promise и обёрток."
+  - "Условная типизация ответов API и перегрузок через дистрибутивность."
 references:
   - title: "TypeScript Handbook: Conditional Types"
     url: https://www.typescriptlang.org/docs/handbook/2/conditional-types.html

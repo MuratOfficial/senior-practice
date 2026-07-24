@@ -3,9 +3,16 @@ title: Типизация в Python — typing, dataclasses, Pydantic
 difficulty: middle
 tags: [typing, dataclasses, pydantic, mypy]
 followUps:
-  - Чем Protocol отличается от ABC и когда структурная типизация уместнее?
-  - dataclass vs NamedTuple vs TypedDict vs Pydantic — критерии выбора?
-  - Почему аннотации не проверяются в рантайме и кто их проверяет?
+  - q: "Чем Protocol отличается от ABC и когда структурная типизация уместнее?"
+    a: "ABC — номинально: класс должен явно наследоваться. Protocol — структурно (утиная типизация статически): подходит любой класс с нужными методами, без наследования. Protocol уместен для чужих/встроенных типов и слабой связанности; ABC — когда нужна явная иерархия."
+  - q: "dataclass vs NamedTuple vs TypedDict vs Pydantic — критерии выбора?"
+    a: "dataclass — объекты с методами, без рантайм-валидации. NamedTuple — иммутабельный кортеж с именами. TypedDict — типизация формы обычного dict (JSON). Pydantic — валидация и парсинг данных в рантайме на границах (API, конфиг)."
+  - q: "Почему аннотации не проверяются в рантайме и кто их проверяет?"
+    a: "Python игнорирует аннотации при исполнении (они лишь метаданные в __annotations__) — их проверяет статический анализатор (mypy/pyright) на этапе разработки/CI. Рантайм-проверку дают явные инструменты (Pydantic, typeguard)."
+applications:
+  - "Явные модели данных: dataclass/NamedTuple/TypedDict под задачу."
+  - "Валидация входных данных на границах через Pydantic."
+  - "Слабая связанность и типизация «уток» через Protocol."
 references:
   - title: "Python docs: typing"
     url: https://docs.python.org/3/library/typing.html

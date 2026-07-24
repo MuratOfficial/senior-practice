@@ -3,9 +3,16 @@ title: Аутентификация — сессии против JWT, OAuth 2.0
 difficulty: senior
 tags: [auth, jwt, sessions, oauth]
 followUps:
-  - Как правильно отзывать JWT и почему это сложно?
-  - Access + refresh токены — зачем два и где их хранить в браузере?
-  - Чем OAuth 2.0 (авторизация) отличается от OIDC (аутентификация)?
+  - q: "Как правильно отзывать JWT и почему это сложно?"
+    a: "JWT самодостаточен и валиден до истечения — сервер его не хранит, поэтому отозвать нельзя без состояния. Решения: короткий TTL access + отзываемый refresh, блэклист по jti в быстром хранилище (Redis), версия токена у пользователя. Всё это возвращает состояние, ради ухода от которого JWT и брали."
+  - q: "Access + refresh токены — зачем два и где их хранить в браузере?"
+    a: "Access короткоживущий (минуты) — на каждый запрос; refresh долгоживущий — обменивается на новый access. Refresh хранят в httpOnly Secure SameSite-куке (недоступна JS), access — в памяти, не в localStorage."
+  - q: "Чем OAuth 2.0 (авторизация) отличается от OIDC (аутентификация)?"
+    a: "OAuth 2.0 — про делегированный доступ к ресурсам (access token: «что можно делать»), не про личность. OIDC — слой поверх OAuth, добавляющий id_token (кто вошёл) и /userinfo. «Войти через Google» — это OIDC."
+applications:
+  - "Stateless-сессии для API и микросервисов (JWT) с коротким TTL."
+  - "Session-куки (server-side) для классических веб-приложений."
+  - "SSO и «войти через X» через OAuth 2.0/OIDC."
 references:
   - title: "OWASP: Session Management Cheat Sheet"
     url: https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html

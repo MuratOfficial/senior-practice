@@ -3,9 +3,16 @@ title: Прототипное наследование и классы под к
 difficulty: senior
 tags: [prototypes, oop, classes]
 followUps:
-  - Чем __proto__ отличается от свойства prototype у функции?
-  - Что делает Object.create(null) и зачем это нужно?
-  - Как работает instanceof и когда он врёт?
+  - q: "Чем __proto__ отличается от свойства prototype у функции?"
+    a: "prototype — свойство функции-конструктора, объект, который станет прототипом создаваемых через new экземпляров. __proto__ (внутренний [[Prototype]]) — ссылка конкретного объекта на его прототип. После new C(): instance.__proto__ === C.prototype."
+  - q: "Что делает Object.create(null) и зачем это нужно?"
+    a: "Создаёт объект без прототипа — «чистый словарь» без унаследованных toString/hasOwnProperty. Полезно как безопасная map по строковым ключам: нет коллизий с proto и защита от prototype pollution."
+  - q: "Как работает instanceof и когда он врёт?"
+    a: "Проверяет, есть ли C.prototype в цепочке прототипов объекта. Врёт между realm (iframe/worker — свои конструкторы), при подмене prototype и через Symbol.hasInstance. Часто надёжнее проверка по форме/типу."
+applications:
+  - "Понимание наследования классов, super и миксинов под капотом."
+  - "Object.create(null) для безопасных словарей и защиты от prototype pollution."
+  - "Отладка «откуда метод» и аккуратное расширение прототипов."
 references:
   - title: "MDN: Inheritance and the prototype chain"
     url: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain

@@ -3,9 +3,16 @@ title: Производительность Node — диагностика бл
 difficulty: senior
 tags: [performance, profiling, memory-leaks]
 followUps:
-  - Как найти, что именно блокирует event loop в проде?
-  - Какими метриками мониторить здоровье Node-сервиса?
-  - Почему растёт RSS при стабильном heap и что с этим делать?
+  - q: "Как найти, что именно блокирует event loop в проде?"
+    a: "Мониторить event loop lag (perf_hooks.monitorEventLoopDelay или метрика APM). При скачках снять CPU-профиль (--cpu-prof или inspector) под нагрузкой и найти синхронные горячие функции: JSON на больших объектах, синхронный crypto/zlib, катастрофический regex."
+  - q: "Какими метриками мониторить здоровье Node-сервиса?"
+    a: "Event loop lag, RSS и heap used, GC-паузы и частота, RPS и латентность (p50/p95/p99), число активных хендлов/сокетов, использование thread pool, error rate — плюс бизнес-метрики. Как рамка — RED/USE."
+  - q: "Почему растёт RSS при стабильном heap и что с этим делать?"
+    a: "Источник вне V8-heap: накопление Buffer, нативные аллокации (addon), внешние ArrayBuffer, фрагментация. Диагностика — process.memoryUsage() (external/arrayBuffers), профиль нативной памяти; лечение — ограничить буферы, проверить нативные зависимости."
+applications:
+  - "SLA по латентности: поиск и устранение блокировок event loop."
+  - "Дашборды здоровья сервиса (event loop lag, GC, p99)."
+  - "Профилирование CPU и памяти в проде для точечной оптимизации."
 references:
   - title: "Node.js docs: Diagnostics"
     url: https://nodejs.org/en/learn/diagnostics

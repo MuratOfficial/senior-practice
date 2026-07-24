@@ -3,9 +3,16 @@ title: Масштабирование Node — cluster, worker_threads, PM2/K8s
 difficulty: senior
 tags: [cluster, worker-threads, scaling]
 followUps:
-  - Чем worker_threads отличается от cluster по назначению и модели памяти?
-  - Как шарить память между воркерами (SharedArrayBuffer, transferList)?
-  - Почему sticky sessions нужны для WebSocket за cluster/балансировщиком?
+  - q: "Чем worker_threads отличается от cluster по назначению и модели памяти?"
+    a: "cluster форкает процессы, делящие порт, — для масштабирования I/O по ядрам (у каждого своя память). worker_threads — потоки в одном процессе для CPU-тяжёлых задач; они могут делить память через SharedArrayBuffer и дешевле по накладным расходам."
+  - q: "Как шарить память между воркерами (SharedArrayBuffer, transferList)?"
+    a: "SharedArrayBuffer виден нескольким worker_threads одновременно (синхронизация через Atomics). Либо передать владение через transferList в postMessage (zero-copy — у отправителя буфер станет недоступен). Обычные объекты копируются структурным клонированием."
+  - q: "Почему sticky sessions нужны для WebSocket за cluster/балансировщиком?"
+    a: "WebSocket — долгоживущее соединение к конкретному воркеру с его состоянием (подписки). Без sticky балансировщик разбросает пакеты/переподключения на разные процессы, где сессии нет. Решение — sticky по ip/cookie или общий слой (Redis pub/sub)."
+applications:
+  - "CPU-тяжёлые задачи (парсинг, шифрование, обработка изображений) в worker_threads."
+  - "Горизонтальное масштабирование по ядрам (cluster) и по инстансам (K8s)."
+  - "Реалтайм за балансировщиком: sticky sessions плюс Redis pub/sub."
 references:
   - title: "Node.js docs: Cluster"
     url: https://nodejs.org/api/cluster.html

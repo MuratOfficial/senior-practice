@@ -3,9 +3,16 @@ title: Вывод типов — widening, as const, satisfies
 difficulty: senior
 tags: [inference, satisfies, const-assertion, widening]
 followUps:
-  - Чем satisfies отличается от аннотации типа и от as?
-  - Когда вывод типов лучше явной аннотации и наоборот?
-  - Что делает as const с вложенными объектами и массивами?
+  - q: "Чем satisfies отличается от аннотации типа и от as?"
+    a: "Аннотация затирает вывод (тип переменной = аннотация). as принуждает без проверки. satisfies проверяет соответствие типу, включая excess property check, но оставляет выведенный узкий тип переменной."
+  - q: "Когда вывод типов лучше явной аннотации и наоборот?"
+    a: "Вывод — для локальных значений: меньше шума, точнее тип. Явная аннотация — для публичных API и границ модулей: стабильный контракт и понятные ошибки на стороне вызова."
+  - q: "Что делает as const с вложенными объектами и массивами?"
+    a: "Рекурсивно делает всё readonly, литералы — узкими, массивы — кортежами: [1, 2] as const → readonly [1, 2]. Вложенные объекты тоже «замораживаются» на уровне типов."
+applications:
+  - "Конфиги и словари-константы с точными литеральными типами (satisfies + as const)."
+  - "Вывод union из значений массива/объекта: typeof arr[number]."
+  - "Стабильные публичные контракты через явные аннотации на границах."
 references:
   - title: "TypeScript Handbook: The satisfies operator"
     url: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator

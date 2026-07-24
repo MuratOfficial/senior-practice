@@ -3,9 +3,16 @@ title: Обработка ошибок в React — Error Boundaries и гран
 difficulty: senior
 tags: [error-boundary, suspense, error-handling, resilience]
 followUps:
-  - Какие ошибки Error Boundary НЕ ловит и что делать с ними?
-  - Как устроена обработка ошибок в App Router Next.js (error.tsx)?
-  - Как организовать границы ошибок в большом приложении — одна или много?
+  - q: "Какие ошибки Error Boundary НЕ ловит и что делать с ними?"
+    a: "Не ловит ошибки в обработчиках событий, в асинхронном коде (setTimeout/промисы), при SSR и ошибки самой границы. Их обрабатывают try/catch на месте, глобальными хендлерами (window.onerror, unhandledrejection) и явным состоянием ошибки."
+  - q: "Как устроена обработка ошибок в App Router Next.js (error.tsx)?"
+    a: "error.tsx — клиентская граница на уровне сегмента маршрута: ловит ошибки рендера сегмента и вложенных, даёт reset() для повторной попытки. global-error.tsx — на корень. Ошибки серверных компонентов пробрасываются к ближайшему error.tsx."
+  - q: "Как организовать границы ошибок в большом приложении — одна или много?"
+    a: "Многоуровнево: корневая как последний рубеж плюс локальные вокруг независимых зон (виджет, роут, ленивый чанк), чтобы падение одной части не роняло весь экран и давало точечный retry."
+applications:
+  - "Изоляция сбоев виджетов и секций, чтобы не падал весь экран."
+  - "Fallback-UI и retry для лениво загружаемых и сторонних компонентов."
+  - "Логирование ошибок рендера (componentDidCatch → Sentry)."
 references:
   - title: "React Docs: Catching rendering errors with an error boundary"
     url: https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary

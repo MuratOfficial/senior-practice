@@ -5,6 +5,12 @@ import {
 } from "./content-schema";
 import type { Topic } from "./topics";
 
+/** Follow-up после нормализации: вопрос и, опционально, эталонный ответ. */
+export interface FollowUp {
+  q: string;
+  a: string | null;
+}
+
 export interface ParsedQuestion {
   slug: string;
   topic: Topic;
@@ -13,7 +19,8 @@ export interface ParsedQuestion {
   tags: string[];
   body: string;
   answer: string;
-  followUps: string[];
+  followUps: FollowUp[];
+  applications: string[];
   references: { title: string; url: string }[];
   status: "draft" | "published";
   version: number;
@@ -50,7 +57,10 @@ export function parseQuestionFile(
     tags: front.tags,
     body,
     answer,
-    followUps: front.followUps,
+    followUps: front.followUps.map((fu): FollowUp =>
+      typeof fu === "string" ? { q: fu, a: null } : fu
+    ),
+    applications: front.applications,
     references: front.references,
     status: front.status,
     version: front.version,

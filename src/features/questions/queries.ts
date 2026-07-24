@@ -25,10 +25,16 @@ export interface QuestionListItem {
   tags: string[];
 }
 
+export interface FollowUp {
+  q: string;
+  a: string | null;
+}
+
 export interface QuestionDetail extends QuestionListItem {
   body: string;
   answer: string;
-  followUps: string[];
+  followUps: FollowUp[];
+  applications: string[];
   references: { title: string; url: string }[];
 }
 
@@ -174,7 +180,8 @@ export const getQuestionBySlug = cache(
       tags: doc.tags,
       body: doc.body,
       answer: doc.answer,
-      followUps: doc.followUps,
+      followUps: (doc.followUps as unknown as FollowUp[]) ?? [],
+      applications: doc.applications,
       references: (doc.references as { title: string; url: string }[]) ?? [],
     };
   }
@@ -202,7 +209,8 @@ export async function listQuestionsBySlugs(
         tags: doc.tags,
         body: doc.body,
         answer: doc.answer,
-        followUps: doc.followUps,
+        followUps: (doc.followUps as unknown as FollowUp[]) ?? [],
+        applications: doc.applications,
         references: (doc.references as { title: string; url: string }[]) ?? [],
       },
     ];

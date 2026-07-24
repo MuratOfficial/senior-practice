@@ -3,9 +3,16 @@ title: MVCC и VACUUM — версии строк, bloat и autovacuum в Postgr
 difficulty: senior
 tags: [mvcc, vacuum, bloat, postgres]
 followUps:
-  - Почему UPDATE в Postgres создаёт новую версию строки, а не меняет на месте?
-  - Что такое bloat и как его заметить и убрать?
-  - Зачем нужен VACUUM помимо очистки — что такое transaction ID wraparound?
+  - q: "Почему UPDATE в Postgres создаёт новую версию строки, а не меняет на месте?"
+    a: "Для MVCC: старая версия должна оставаться видимой транзакциям с более ранним снапшотом. UPDATE помечает старый кортеж удалённым (xmax) и вставляет новый — читатели со старым снапшотом видят прежнюю версию, писатели их не блокируют."
+  - q: "Что такое bloat и как его заметить и убрать?"
+    a: "Bloat — раздувание таблицы/индексов неубранными мёртвыми кортежами. Замечают по pg_stat_user_tables (n_dead_tup), pgstattuple, росту размера при неизменном числе строк. Убирают VACUUM (место переиспользуется) или pg_repack/VACUUM FULL (возврат диска)."
+  - q: "Зачем нужен VACUUM помимо очистки — что такое transaction ID wraparound?"
+    a: "XID 32-битный и зацикливается; без заморозки старых строк через ~2 млрд транзакций они могли бы стать «из будущего» и исчезнуть. VACUUM замораживает старые кортежи; у лимита Postgres форсит vacuum, а в крайнем случае уходит в read-only."
+applications:
+  - "Понимание, почему частые UPDATE горячих строк дороги (новые версии + индексы)."
+  - "Тюнинг autovacuum на больших и горячих таблицах."
+  - "Контроль долгих транзакций и replication slots, тормозящих очистку."
 references:
   - title: "PostgreSQL docs: Concurrency Control (MVCC)"
     url: https://www.postgresql.org/docs/current/mvcc-intro.html

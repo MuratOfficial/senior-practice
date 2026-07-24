@@ -3,9 +3,16 @@ title: Declaration merging и module augmentation
 difficulty: senior
 tags: [declaration-merging, module-augmentation, ambient, global]
 followUps:
-  - Что можно и что нельзя сливать (interface vs type, class, enum)?
-  - Как добавить свойство в Express.Request или в глобальный Window?
-  - Чем `declare global` отличается от augmentation конкретного модуля?
+  - q: "Что можно и что нельзя сливать (interface vs type, class, enum)?"
+    a: "Сливаются: interface+interface, namespace+namespace, namespace с class/function/enum (добавляет статику и вложенные типы). Нельзя: два type-алиаса и два класса (Duplicate identifier). Конфликтующие поля-примитивы в интерфейсах — ошибка."
+  - q: "Как добавить свойство в Express.Request или в глобальный Window?"
+    a: "Request — через declare module «express-serve-static-core» { interface Request { user?: ... } } из файла-модуля. Window — через declare global { interface Window { ... } } (файл обязан иметь import/export)."
+  - q: "Чем `declare global` отличается от augmentation конкретного модуля?"
+    a: "declare global лезет в глобальную область (Window, globalThis, NodeJS.ProcessEnv), а augmentation модуля — в конкретный импортируемый пакет. Оба требуют, чтобы файл был модулем."
+applications:
+  - "Расширение типов сторонних библиотек: req.user в Express, кастомные поля."
+  - "Глобальные объявления: window.analytics, строгий process.env."
+  - "Плагинные точки расширения в API библиотек (interface, а не type)."
 references:
   - title: "TypeScript Handbook: Declaration Merging"
     url: https://www.typescriptlang.org/docs/handbook/declaration-merging.html

@@ -3,9 +3,16 @@ title: Конкурентный React — transitions, Suspense, deferred value
 difficulty: senior
 tags: [concurrent, suspense, transitions]
 followUps:
-  - Чем useTransition отличается от useDeferredValue и когда что выбрать?
-  - Как Suspense работает с data fetching — кто «бросает» промис?
-  - Что такое tearing и почему конкурентность его провоцирует?
+  - q: "Чем useTransition отличается от useDeferredValue и когда что выбрать?"
+    a: "useTransition помечает конкретное обновление как несрочное (даёт startTransition и isPending) — когда контролируешь источник изменения. useDeferredValue откладывает производное значение (props/внешнее), когда источник тебе не подвластен."
+  - q: "Как Suspense работает с data fetching — кто «бросает» промис?"
+    a: "Компонент или хук (например use(promise) либо интеграция библиотеки) при отсутствии данных бросает промис; ближайший Suspense ловит его, показывает fallback и повторяет рендер после резолва. Сам React фетч не делает."
+  - q: "Что такое tearing и почему конкурентность его провоцирует?"
+    a: "Tearing — когда во время прерываемого рендера внешний стор меняется, и разные части UI показывают несогласованные версии данных. Конкурентный рендер прерывается и возобновляется, поэтому чтение стора должно идти через useSyncExternalStore."
+applications:
+  - "Отзывчивый ввод и фильтрация больших списков (transition/deferred value) без фризов."
+  - "Стриминговый рендер с Suspense-границами и скелетонами."
+  - "Безопасное чтение внешних сторов в конкурентном режиме (useSyncExternalStore)."
 references:
   - title: "React docs: useTransition"
     url: https://react.dev/reference/react/useTransition

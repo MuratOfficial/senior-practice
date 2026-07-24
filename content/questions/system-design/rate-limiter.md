@@ -3,9 +3,16 @@ title: Спроектируйте распределённый rate limiter
 difficulty: senior
 tags: [system-design, rate-limiting, redis, algorithms]
 followUps:
-  - Token bucket против sliding window log — точность против памяти?
-  - Что делать с race condition двух инстансов, инкрементирующих один счётчик?
-  - Где размещать limiter — API gateway, middleware или sidecar?
+  - q: "Token bucket против sliding window log — точность против памяти?"
+    a: "Token bucket хранит два числа (токены, время) — дёшев по памяти, допускает всплески до размера ведра, приблизителен на границах. Sliding window log хранит таймстемпы всех запросов — точен, но память растёт с числом запросов. Компромисс — sliding window counter."
+  - q: "Что делать с race condition двух инстансов, инкрементирующих один счётчик?"
+    a: "Централизовать счётчик в общем сторе с атомарностью: атомарный INCR в Redis, Lua-скрипт для check-and-increment одной операцией, или token bucket в Redis. Локальные счётчики на инстанс расходятся — нужен общий стор или шардирование ключей."
+  - q: "Где размещать limiter — API gateway, middleware или sidecar?"
+    a: "Gateway/edge — отсечь трафик раньше всего, общий для всех сервисов (грубые лимиты). Middleware в сервисе — доступ к бизнес-контексту (per-user/endpoint). Sidecar — вынести из кода в mesh. Часто многослойно: грубый на edge + точный в сервисе."
+applications:
+  - "Защита API от злоупотреблений и DoS (per-user/ip/endpoint)."
+  - "Распределённый лимитер на Redis (атомарный INCR/Lua)."
+  - "Многослойное размещение: edge-gateway + сервисный middleware."
 references:
   - title: "Stripe: Scaling your API with rate limiters"
     url: https://stripe.com/blog/rate-limiters

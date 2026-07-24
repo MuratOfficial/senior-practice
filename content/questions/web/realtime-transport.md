@@ -3,9 +3,16 @@ title: Realtime в вебе — WebSocket, SSE, long polling
 difficulty: senior
 tags: [websocket, sse, polling, realtime]
 followUps:
-  - Почему SSE часто достаточно и когда WebSocket обязателен?
-  - Как масштабировать WebSocket-серверы за балансировщиком?
-  - Что такое heartbeat/ping-pong и зачем реконнект с backoff и jitter?
+  - q: "Почему SSE часто достаточно и когда WebSocket обязателен?"
+    a: "SSE — однонаправленный поток сервер→клиент поверх обычного HTTP (авто-реконнект, простой). Достаточно для нотификаций, лент, прогресса. WebSocket нужен при двунаправленном низколатентном обмене: чат с набором, игры, совместное редактирование, бинарные данные."
+  - q: "Как масштабировать WebSocket-серверы за балансировщиком?"
+    a: "Соединения stateful и sticky к инстансу. Для доставки между инстансами — общий брокер (Redis pub/sub, NATS): сообщение публикуется, инстансы с нужными подписчиками рассылают. Плюс sticky-балансировка и внешнее хранилище presence."
+  - q: "Что такое heartbeat/ping-pong и зачем реконнект с backoff и jitter?"
+    a: "Ping-pong проверяет, что соединение живо, и не даёт прокси/LB закрыть idle-соединение; мёртвое переоткрывают. Реконнект с экспоненциальным backoff и jitter не допускает лавины одновременных переподключений (thundering herd) после сбоя."
+applications:
+  - "SSE для однонаправленных обновлений (нотификации, прогресс, лента)."
+  - "WebSocket для чата, игр, совместного редактирования."
+  - "Масштабирование реалтайма через Redis pub/sub + sticky sessions."
 references:
   - title: "MDN: Server-sent events"
     url: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events

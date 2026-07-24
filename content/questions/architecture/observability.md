@@ -3,9 +3,16 @@ title: Observability — логи, метрики, трейсы и как ими
 difficulty: senior
 tags: [observability, logging, metrics, tracing, sre]
 followUps:
-  - Чем observability отличается от мониторинга?
-  - Что такое RED/USE-метрики и golden signals?
-  - Как связать лог, метрику и трейс одного запроса между собой?
+  - q: "Чем observability отличается от мониторинга?"
+    a: "Мониторинг — заранее заданные дашборды/алерты на известные вопросы («CPU высок?»). Observability — способность отвечать на новые, незапланированные вопросы о системе по её выходным данным (логи, метрики, трейсы) без выката нового кода. Про «неизвестные неизвестные»."
+  - q: "Что такое RED/USE-метрики и golden signals?"
+    a: "RED (для сервисов): Rate, Errors, Duration. USE (для ресурсов): Utilization, Saturation, Errors. Google golden signals: latency, traffic, errors, saturation. Компактные наборы, покрывающие здоровье сервиса и ресурсов."
+  - q: "Как связать лог, метрику и трейс одного запроса между собой?"
+    a: "Через сквозной correlation/trace id, пробрасываемый по всем сервисам (W3C traceparent) и вставляемый в структурные логи и exemplars метрик. Тогда из всплеска латентности переходишь в трейс, из спана — в связанные логи. Контекст несёт propagation/AsyncLocalStorage."
+applications:
+  - "Диагностика инцидентов без нового кода (структурные логи + трейсы)."
+  - "Дашборды и алерты по RED/USE/golden signals."
+  - "Корреляция логов/метрик/трейсов через trace id (OpenTelemetry)."
 references:
   - title: "Google SRE Book: Monitoring Distributed Systems"
     url: https://sre.google/sre-book/monitoring-distributed-systems/

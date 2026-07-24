@@ -3,9 +3,16 @@ title: Промисы и async/await под капотом
 difficulty: senior
 tags: [promises, async, error-handling]
 followUps:
-  - Чем Promise.all отличается от allSettled, race и any? Когда какой выбрать?
-  - Что происходит с необработанным reject (unhandledrejection)?
-  - Почему await в цикле for — иногда антипаттерн, а иногда правильно?
+  - q: "Чем Promise.all отличается от allSettled, race и any? Когда какой выбрать?"
+    a: "all — все успешны или падает на первом reject; allSettled — ждёт всех и отдаёт статус каждого; race — первый завершившийся (resolve или reject); any — первый успешный, падает только если зафейлились все. all — когда «нужно всё», allSettled — для батча с частичными ошибками."
+  - q: "Что происходит с необработанным reject (unhandledrejection)?"
+    a: "Возникает событие unhandledrejection (в браузере на window, в Node на process). Без обработчика — предупреждение/лог, а в Node может завершить процесс. Признак потерянного .catch или await без try."
+  - q: "Почему await в цикле for — иногда антипаттерн, а иногда правильно?"
+    a: "Последовательный await сериализует независимые операции — медленно, их лучше через Promise.all. Но если итерация зависит от предыдущей или нужен контроль нагрузки/порядка — последовательность правильна."
+applications:
+  - "Параллельная загрузка независимых ресурсов (Promise.all) vs устойчивый батч (allSettled)."
+  - "Таймауты и «первый ответивший» через race/any."
+  - "Ограничение конкуррентности (pool) и ретраи в сетевых слоях."
 references:
   - title: "MDN: Using promises"
     url: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises

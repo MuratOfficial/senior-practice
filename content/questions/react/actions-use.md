@@ -3,9 +3,16 @@ title: Actions в React 19 — use, useActionState, useOptimistic
 difficulty: senior
 tags: [react-19, actions, use-hook, optimistic, transitions]
 followUps:
-  - Чем form action отличается от onSubmit и как связан с useTransition?
-  - Что делает хук use и почему его можно вызывать условно?
-  - Как useOptimistic откатывает изменение при ошибке?
+  - q: "Чем form action отличается от onSubmit и как связан с useTransition?"
+    a: "`<form action={fn}>` вызывает fn с FormData и автоматически оборачивает её в transition: React ведёт pending и не блокирует UI. onSubmit — низкоуровневый обработчик, где pending, preventDefault и сброс делаешь вручную."
+  - q: "Что делает хук use и почему его можно вызывать условно?"
+    a: "use читает ресурс — промис (кооперирует с Suspense, приостанавливая компонент) или контекст. Его можно звать условно и в циклах, потому что он не хранит состояние между рендерами и не завязан на порядок хуков."
+  - q: "Как useOptimistic откатывает изменение при ошибке?"
+    a: "Оптимистичное значение живёт только на время transition поверх реального состояния. Когда action завершается (успех или ошибка) и приходит настоящее состояние, оптимистичный слой отбрасывается — при ошибке UI откатывается сам."
+applications:
+  - "Формы мутаций без ручного boilerplate (pending/error/сброс) через useActionState."
+  - "Мгновенный отклик списков, лайков, сообщений (useOptimistic) с авто-откатом."
+  - "Server Actions в Next.js: прогресс и ошибки через те же хуки."
 references:
   - title: "React: <form> и Actions"
     url: https://react.dev/reference/react-dom/components/form

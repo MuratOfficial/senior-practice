@@ -3,9 +3,16 @@ title: package.json exports, dual package и разрешение модулей
 difficulty: senior
 tags: [esm, package-json, exports, module-resolution]
 followUps:
-  - Чем поле exports отличается от main и почему оно «запечатывает» пакет?
-  - Что такое dual package hazard и как его избежать?
-  - Как conditional exports различают import/require/node/browser?
+  - q: "Чем поле exports отличается от main и почему оно «запечатывает» пакет?"
+    a: "main лишь указывает точку входа, а внутренние пути оставались доступны. exports задаёт полную карту публичных входов: всё неперечисленное недоступно (import несуществующего пути бросает). Это инкапсулирует пакет и даёт менять внутреннюю структуру."
+  - q: "Что такое dual package hazard и как его избежать?"
+    a: "Пакет с ESM- и CJS-копиями может загрузиться дважды (import + require), давая два экземпляра: рвётся instanceof, дублируются синглтоны и состояние. Избегают, держа состояние в едином ядре (реэкспорт) или отдавая только ESM."
+  - q: "Как conditional exports различают import/require/node/browser?"
+    a: "Ключи-условия в exports выбирают файл по способу и среде подключения: import → ESM-ветка, require → CJS, browser → сборка под браузер, node → серверная. Порядок ключей значим — первое совпадение (types первым, default последним)."
+applications:
+  - "Публикация библиотек с чётким публичным API и скрытыми внутренностями."
+  - "Dual-package пакеты (ESM+CJS) без hazard через общее ядро."
+  - "Разные сборки под браузер и Node из одного пакета (conditional exports)."
 references:
   - title: "Node.js docs: Packages — exports"
     url: https://nodejs.org/api/packages.html#exports

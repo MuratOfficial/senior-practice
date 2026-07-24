@@ -3,9 +3,16 @@ title: Блокировки и дедлоки — row locks, SELECT FOR UPDATE, 
 difficulty: senior
 tags: [locks, deadlocks, postgres, concurrency]
 followUps:
-  - Как Postgres обнаруживает deadlock и кто становится жертвой?
-  - Чем SELECT FOR UPDATE отличается от FOR NO KEY UPDATE и SKIP LOCKED?
-  - Почему долгие транзакции опасны даже без явных блокировок?
+  - q: "Как Postgres обнаруживает deadlock и кто становится жертвой?"
+    a: "Postgres строит граф ожиданий блокировок и периодически (deadlock_timeout) ищет цикл. Найдя, выбирает жертву (обычно транзакцию, которую дешевле откатить) и бросает ей ошибку deadlock detected — остальные продолжают."
+  - q: "Чем SELECT FOR UPDATE отличается от FOR NO KEY UPDATE и SKIP LOCKED?"
+    a: "FOR UPDATE берёт сильную блокировку строки (под UPDATE/DELETE), блокируя конкурентов. FOR NO KEY UPDATE слабее — не мешает вставке ссылающихся FK. SKIP LOCKED пропускает уже залоченные строки — основа очередей задач в БД."
+  - q: "Почему долгие транзакции опасны даже без явных блокировок?"
+    a: "Долгая транзакция удерживает старый снапшот — vacuum не убирает мёртвые кортежи (bloat растёт), держит xmin horizon, слабые блокировки, копит WAL. Даже read-only долгая транзакция вредит autovacuum."
+applications:
+  - "Согласованный порядок блокировок для избежания deadlock."
+  - "Очереди задач в БД через FOR UPDATE SKIP LOCKED."
+  - "Короткие транзакции ради здоровья vacuum и конкурентности."
 references:
   - title: "PostgreSQL Docs: Explicit Locking"
     url: https://www.postgresql.org/docs/current/explicit-locking.html

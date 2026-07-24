@@ -102,15 +102,43 @@ export default async function QuestionPage({
         </AnswerReveal>
       </section>
 
+      {question.applications.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">Где применяется</h2>
+          <ul className="list-disc space-y-1 pl-5 text-sm">
+            {question.applications.map((app) => (
+              <li key={app}>{app}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {question.followUps.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-lg font-semibold">
             Follow-up вопросы интервьюера
           </h2>
-          <ul className="list-disc space-y-1 pl-5 text-sm">
-            {question.followUps.map((fu) => (
-              <li key={fu}>{fu}</li>
-            ))}
+          <ul className="space-y-2 text-sm">
+            {question.followUps.map((fu) =>
+              fu.a ? (
+                <li key={fu.q}>
+                  <details className="group rounded-md border border-border/60 px-3 py-2">
+                    <summary className="cursor-pointer list-none font-medium marker:hidden [&::-webkit-details-marker]:hidden">
+                      <span className="text-muted-foreground group-open:text-foreground">
+                        ▸ {fu.q}
+                      </span>
+                    </summary>
+                    <div className="mt-2 border-t border-border/60 pt-2 text-muted-foreground">
+                      <Markdown>{fu.a}</Markdown>
+                    </div>
+                  </details>
+                </li>
+              ) : (
+                <li key={fu.q} className="list-disc pl-5 marker:text-muted-foreground">
+                  {fu.q}
+                </li>
+              )
+            )}
           </ul>
         </section>
       )}

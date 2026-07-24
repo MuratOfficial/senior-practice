@@ -3,9 +3,16 @@ title: Обработка ошибок и graceful shutdown в Node-сервис
 difficulty: senior
 tags: [error-handling, graceful-shutdown, reliability]
 followUps:
-  - Почему после uncaughtException рекомендуют завершать процесс, а не «продолжать работу»?
-  - Как устроен graceful shutdown HTTP-сервера под Kubernetes (SIGTERM)?
-  - Операционные ошибки vs programmer errors — почему их обрабатывают по-разному?
+  - q: "Почему после uncaughtException рекомендуют завершать процесс, а не «продолжать работу»?"
+    a: "После необработанного исключения процесс в неопределённом состоянии: ресурсы полуготовы, инварианты нарушены. Продолжение ведёт к утечкам и порче данных. Правильно — залогировать, корректно закрыться и дать оркестратору перезапустить."
+  - q: "Как устроен graceful shutdown HTTP-сервера под Kubernetes (SIGTERM)?"
+    a: "На SIGTERM: перестать принимать новые соединения (server.close), дождаться текущих запросов с таймаутом, закрыть пул БД и подписки, затем выйти. K8s шлёт SIGTERM, ждёт terminationGracePeriod, потом SIGKILL — уложиться надо в это окно."
+  - q: "Операционные ошибки vs programmer errors — почему их обрабатывают по-разному?"
+    a: "Операционные (сеть отвалилась, невалидный ввод, таймаут) ожидаемы: ретрай, 4xx/5xx, деградация. Programmer errors (баги: undefined is not a function) чинят в коде, а не глотают — глушение try/catch маскирует дефект."
+applications:
+  - "Надёжные сервисы: обработка операционных ошибок и корректный shutdown."
+  - "Zero-downtime деплой под Kubernetes (SIGTERM, readiness-проба)."
+  - "Разграничение ретраев/деградации и фатальных багов в логах и алертах."
 references:
   - title: "Node.js docs: Process events"
     url: https://nodejs.org/api/process.html#event-uncaughtexception

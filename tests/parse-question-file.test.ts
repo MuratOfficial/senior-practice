@@ -36,6 +36,43 @@ describe("parseQuestionFile", () => {
     expect(parsed.references[0].url).toContain("developer.mozilla.org");
   });
 
+  it("нормализует строковый follow-up в { q, a: null }", () => {
+    const parsed = parseQuestionFile(validFile, "javascript", "event-loop");
+    expect(parsed.followUps[0]).toEqual({
+      q: "Чем отличается event loop в Node.js?",
+      a: null,
+    });
+    expect(parsed.applications).toEqual([]);
+  });
+
+  it("разбирает follow-up с ответом и applications", () => {
+    const withAnswers = `---
+title: Как работает Event Loop в браузере
+difficulty: senior
+tags: [event-loop, async]
+followUps:
+  - q: Чем отличается event loop в Node.js?
+    a: В Node есть фазы libuv и microtask-очередь между ними.
+applications:
+  - Планирование задач в UI без блокировки рендера
+---
+
+Объясните, как устроен Event Loop.
+
+<!-- answer -->
+
+Event Loop берёт задачи из очередей, когда стек пуст.
+`;
+    const parsed = parseQuestionFile(withAnswers, "javascript", "event-loop");
+    expect(parsed.followUps[0]).toEqual({
+      q: "Чем отличается event loop в Node.js?",
+      a: "В Node есть фазы libuv и microtask-очередь между ними.",
+    });
+    expect(parsed.applications).toEqual([
+      "Планирование задач в UI без блокировки рендера",
+    ]);
+  });
+
   it("подставляет значения по умолчанию: status=published, version=1", () => {
     const parsed = parseQuestionFile(validFile, "javascript", "event-loop");
     expect(parsed.status).toBe("published");

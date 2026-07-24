@@ -3,9 +3,16 @@ title: type против interface — отличия и критерии выб
 difficulty: middle
 tags: [types, interface, declaration-merging]
 followUps:
-  - Что такое declaration merging и где он используется в реальных библиотеках?
-  - Почему interface иногда даёт более понятные ошибки и быстрее проверяется?
-  - Можно ли расширить type через extends?
+  - q: "Что такое declaration merging и где он используется в реальных библиотеках?"
+    a: "Несколько interface с одним именем сливаются в один. Библиотеки дают через это точки расширения: augmentation Express.Request, глобальный Window, темы (styled-components DefaultTheme)."
+  - q: "Почему interface иногда даёт более понятные ошибки и быстрее проверяется?"
+    a: "interface — именованная сущность: TS кэширует её и показывает по имени, не разворачивая структуру. В объёмных пересечениях type-алиасы дают длинные «размотанные» ошибки и проверяются медленнее."
+  - q: "Можно ли расширить type через extends?"
+    a: "У type нет extends, но он композируется пересечением: type B = A & { ... }. interface использует extends и может расширять type-алиас объекта. Для публичных расширяемых контрактов чаще берут interface."
+applications:
+  - "Публичные объектные контракты и точки расширения — interface."
+  - "Union, пересечения, кортежи, mapped/условные типы — type (interface не умеет)."
+  - "Augmentation сторонних типов — только через interface."
 references:
   - title: "TypeScript Handbook: Everyday Types"
     url: https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces

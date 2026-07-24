@@ -3,9 +3,16 @@ title: Приведение типов и равенство — == против
 difficulty: middle
 tags: [coercion, equality, type-conversion, toprimitive]
 followUps:
-  - Почему `[] == ![]` истинно, а `[] == []` ложно?
-  - Чем отличаются ==, === и Object.is для NaN, +0 и -0?
-  - Как объект превращается в примитив при `` `${obj}` `` и `obj + ""`?
+  - q: "Почему `[] == ![]` истинно, а `[] == []` ложно?"
+    a: "![] → false; [] == false → [] == 0; ToPrimitive([]) даёт \"\", затем \"\" == 0 → 0 == 0 → true. А [] == [] сравнивает две разные ссылки на объекты — всегда false."
+  - q: "Чем отличаются ==, === и Object.is для NaN, +0 и -0?"
+    a: "=== даёт NaN===NaN → false и +0===-0 → true. Object.is (SameValue) чинит оба случая: NaN совпадает с NaN, а +0 и -0 различаются. == вдобавок приводит типы перед сравнением."
+  - q: "Как объект превращается в примитив при `${obj}` и конкатенации со строкой?"
+    a: "Через ToPrimitive. Для `${obj}` hint «string» (сначала toString), для obj + строка hint «default» (Symbol.toPrimitive → valueOf → toString). Первый вернувший примитив результат и берётся."
+applications:
+  - "Идиома x == null — компактно поймать null и undefined разом."
+  - "Понимание багов при сравнении форм-значений, дат и объектов-обёрток."
+  - "Корректные проверки: Number.isNaN, Object.is (та же модель у ключей Map/Set)."
 references:
   - title: "MDN: Equality comparisons and sameness"
     url: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness

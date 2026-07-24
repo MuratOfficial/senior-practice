@@ -3,9 +3,16 @@ title: Utility types и mapped types — как устроены изнутри
 difficulty: senior
 tags: [utility-types, mapped-types, keyof]
 followUps:
-  - Как написать DeepPartial и какие у него подводные камни?
-  - Что делают модификаторы +/- readonly и +/-? в mapped types?
-  - Как переименовать ключи через as в mapped type?
+  - q: "Как написать DeepPartial и какие у него подводные камни?"
+    a: "type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] }. Камни: ломает массивы, кортежи, функции и Date (они object), возможна чрезмерная глубина рекурсии — нужны спец-ветки."
+  - q: "Что делают модификаторы +/- readonly и +/-? в mapped types?"
+    a: "Добавляют или снимают модификаторы: -readonly делает поля изменяемыми (Mutable), -? — обязательными (Required), + добавляет явно. Так строят Required, Mutable и обратные утилити."
+  - q: "Как переименовать ключи через as в mapped type?"
+    a: "{ [K in keyof T as NewName]: ... } — as задаёт новое имя (часто через template literal). Вернув never, ключ исключают. Основа типов Getters/Setters и фильтрации ключей."
+applications:
+  - "Свои утилити-типы: DeepPartial, Mutable, PickByType, переименование ключей."
+  - "Трансформации DTO ↔ доменных моделей на уровне типов."
+  - "Генерация типов форм и патчей (Partial с модификаторами)."
 references:
   - title: "TypeScript Handbook: Mapped Types"
     url: https://www.typescriptlang.org/docs/handbook/2/mapped-types.html

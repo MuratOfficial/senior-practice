@@ -3,9 +3,16 @@ title: Template literal types и key remapping
 difficulty: senior
 tags: [template-literal-types, mapped-types, key-remapping, inference]
 followUps:
-  - Как infer внутри template literal type извлекает часть строки?
-  - Что делает `as` в mapped type и как через него отфильтровать ключи?
-  - Почему большие union-комбинации строк взрывают компилятор?
+  - q: "Как infer внутри template literal type извлекает часть строки?"
+    a: "В условном типе шаблон с infer парсит строку по образцу: T extends `${infer A}:${infer B}` ? ... захватывает части до и после разделителя на уровне типов."
+  - q: "Что делает `as` в mapped type и как через него отфильтровать ключи?"
+    a: "as переписывает имя ключа (key remapping): [K in keyof T as `on${Capitalize<K & string>}`]. Вернув never в as, ключ исключают из результата — так фильтруют по типу значения."
+  - q: "Почему большие union-комбинации строк взрывают компилятор?"
+    a: "Template literal с union перемножает члены комбинаторно; несколько union по сотне элементов дают миллионы типов — упор в лимит «union too complex» и резкое замедление IDE и сборки."
+applications:
+  - "Типобезопасные имена событий и обработчиков (on${Event}), CSS-свойств."
+  - "Парсинг конечных строковых доменов: роуты, ключи i18n."
+  - "Билдеры и автогенерация API-клиентов из схемы."
 references:
   - title: "TypeScript Handbook: Template Literal Types"
     url: https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html

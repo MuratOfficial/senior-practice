@@ -3,9 +3,16 @@ title: asyncio — event loop, корутины и типичные ошибки
 difficulty: senior
 tags: [asyncio, coroutines, async]
 followUps:
-  - Чем create_task отличается от await корутины и от gather?
-  - Как встроить блокирующий код в asyncio-приложение (run_in_executor / to_thread)?
-  - Что такое structured concurrency и TaskGroup в Python 3.11+?
+  - q: "Чем create_task отличается от await корутины и от gather?"
+    a: "await корутины запускает её последовательно и ждёт результат. create_task планирует корутину на event loop и возвращает Task, выполняющийся конкурентно (потом его надо await/собрать). gather запускает набор конкурентно и ждёт всех, возвращая список результатов."
+  - q: "Как встроить блокирующий код в asyncio-приложение (run_in_executor / to_thread)?"
+    a: "Прямой блокирующий вызов застопорит event loop. Его выносят в пул: asyncio.to_thread(fn, ...) (потоки — для I/O-bound и GIL-освобождающих) или loop.run_in_executor с ThreadPool/ProcessPool (CPU-bound — процессы)."
+  - q: "Что такое structured concurrency и TaskGroup в Python 3.11+?"
+    a: "Принцип: задачи живут в явной области, которая не завершится, пока не завершатся все дочерние. async with asyncio.TaskGroup() это гарантирует: при ошибке любой задачи остальные отменяются, ошибки собираются в ExceptionGroup — нет утёкших задач."
+applications:
+  - "Конкурентные сетевые вызовы (API, БД) без потоков."
+  - "Веб-серверы и клиенты на asyncio (FastAPI, aiohttp)."
+  - "Надёжная отмена и сбор ошибок групп задач через TaskGroup."
 references:
   - title: "Python docs: asyncio"
     url: https://docs.python.org/3/library/asyncio.html

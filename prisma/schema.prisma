@@ -95,7 +95,8 @@ model Question {
   body        String
   answer      String
   quizOptions Json?
-  followUps   String[]
+  followUps   Json          @default("[]") // [{ q, a }] — у follow-up может быть эталонный ответ
+  applications String[]     @default([])   // «Где применяется» — короткие пункты
   references  Json          @default("[]")
   status      ContentStatus @default(published)
   version     Int           @default(1)

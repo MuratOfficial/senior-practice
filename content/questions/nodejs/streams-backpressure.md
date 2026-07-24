@@ -3,9 +3,16 @@ title: Стримы и backpressure
 difficulty: senior
 tags: [streams, backpressure, pipeline]
 followUps:
-  - Что произойдёт, если игнорировать возвращаемое значение write()?
-  - Чем pipeline лучше pipe и почему pipe опасен в проде?
-  - Как связаны Node-стримы и Web Streams (ReadableStream)?
+  - q: "Что произойдёт, если игнорировать возвращаемое значение write()?"
+    a: "write() возвращает false, когда внутренний буфер переполнен — сигнал притормозить и ждать drain. Игнорируя его, копишь данные в памяти без ограничений: быстрый источник в медленный приёмник даёт рост памяти и OOM под нагрузкой."
+  - q: "Чем pipeline лучше pipe и почему pipe опасен в проде?"
+    a: "pipe автоматизирует backpressure, но не пробрасывает ошибки и не закрывает звенья каскадно: сбой одного оставляет остальные висеть — утечки дескрипторов и памяти. pipeline пробрасывает ошибку и уничтожает все звенья при сбое любого."
+  - q: "Как связаны Node-стримы и Web Streams (ReadableStream)?"
+    a: "Web Streams (ReadableStream/WritableStream) — кросс-платформенный стандарт (fetch body, Response). Node-стримы конвертируются через Readable.toWeb/fromWeb. Readable к тому же async-iterable — for await даёт backpressure автоматически."
+applications:
+  - "Потоковая обработка больших файлов и выгрузок с постоянной памятью."
+  - "Надёжные конвейеры (pipeline) с обработкой ошибок и закрытием звеньев."
+  - "Стриминг HTTP-ответов (CSV-экспорт курсором) вместо сборки в памяти."
 references:
   - title: "Node.js docs: Backpressuring in Streams"
     url: https://nodejs.org/en/learn/modules/backpressuring-in-streams

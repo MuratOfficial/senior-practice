@@ -3,9 +3,16 @@ title: CORS и Same-Origin Policy — что и от чего защищает
 difficulty: senior
 tags: [cors, security, same-origin, preflight]
 followUps:
-  - Когда браузер шлёт preflight (OPTIONS), а когда нет?
-  - Почему Access-Control-Allow-Origin "*" несовместим с credentials?
-  - Защищает ли CORS сервер от запросов? От CSRF?
+  - q: "Когда браузер шлёт preflight (OPTIONS), а когда нет?"
+    a: "Preflight шлётся для «непростых» запросов: методы кроме GET/HEAD/POST, кастомные заголовки, Content-Type кроме form/urlencoded/text/plain. «Простые» запросы идут сразу (но ответ всё равно проверяется на Allow-Origin)."
+  - q: "Почему Access-Control-Allow-Origin «*» несовместим с credentials?"
+    a: "С credentials (куки/авторизация) браузер требует конкретный origin в Allow-Origin и Allow-Credentials: true — wildcard запрещён, иначе любой сайт мог бы слать аутентифицированные запросы и читать ответ. Нужно эхо-ить конкретный разрешённый origin."
+  - q: "Защищает ли CORS сервер от запросов? От CSRF?"
+    a: "Нет. CORS — правило браузера о том, может ли скрипт прочитать ответ кросс-доменно; сам запрос до сервера доходит, а не-браузерные клиенты CORS игнорируют. CSRF он не решает (простые запросы уходят без preflight) — нужны SameSite-куки/токены."
+applications:
+  - "Настройка API под кросс-доменный фронтенд (конкретные origin + credentials)."
+  - "Понимание, почему preflight добавляет round-trip (кэш через max-age)."
+  - "CORS — не механизм авторизации; защита сервера обеспечивается отдельно."
 references:
   - title: "MDN: Cross-Origin Resource Sharing"
     url: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS

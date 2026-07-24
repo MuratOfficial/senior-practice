@@ -3,9 +3,16 @@ title: HTTP-кэширование — Cache-Control, ETag, стратегии
 difficulty: senior
 tags: [caching, http, cdn, etag]
 followUps:
-  - Чем no-cache отличается от no-store и must-revalidate?
-  - Как устроен паттерн immutable-ассетов с хэшем в имени файла?
-  - Что делает stale-while-revalidate и где он применяется?
+  - q: "Чем no-cache отличается от no-store и must-revalidate?"
+    a: "no-store — вообще не кэшировать (чувствительные данные). no-cache — кэшировать можно, но перед использованием обязательно ревалидировать (условный запрос). must-revalidate — протухший ответ отдавать только после успешной ревалидации, нельзя stale при недоступности сервера."
+  - q: "Как устроен паттерн immutable-ассетов с хэшем в имени файла?"
+    a: "Имя файла содержит хэш контента (app.a1b2c3.js); при изменении меняется имя. Такой ассет отдают с Cache-Control: max-age=31536000, immutable — браузер кэширует навсегда без ревалидации, а новый деплой = новый URL. HTML — без кэша, чтобы подхватить новые имена."
+  - q: "Что делает stale-while-revalidate и где он применяется?"
+    a: "Позволяет отдать протухший ответ мгновенно, ревалидируя в фоне — пользователь не ждёт, свежесть подтягивается к следующему запросу. Применяется в CDN и клиентских кэшах (SWR/React Query)."
+applications:
+  - "Immutable-кэш для версионированных статических ассетов (хэш в имени)."
+  - "ETag/Last-Modified и условные запросы для динамики."
+  - "stale-while-revalidate на CDN и в клиентских data-кэшах."
 references:
   - title: "MDN: HTTP caching"
     url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching

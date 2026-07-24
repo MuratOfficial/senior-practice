@@ -3,9 +3,16 @@ title: XSS, CSRF, CSP — модель атак и слои защиты
 difficulty: senior
 tags: [security, xss, csrf, csp]
 followUps:
-  - Почему httpOnly-кука не решает XSS, а лишь ограничивает ущерб?
-  - Как настроить CSP для приложения с инлайн-скриптами (nonce, strict-dynamic)?
-  - Что делает SameSite=Lax по умолчанию и какие сценарии CSRF остаются?
+  - q: "Почему httpOnly-кука не решает XSS, а лишь ограничивает ущерб?"
+    a: "httpOnly мешает украсть токен через document.cookie, но при XSS скрипт уже выполняется в контексте пользователя — он делает аутентифицированные запросы куками автоматически, читает DOM, шлёт данные. httpOnly снижает кражу сессии, но не устраняет XSS."
+  - q: "Как настроить CSP для приложения с инлайн-скриптами (nonce, strict-dynamic)?"
+    a: "Инлайн-скриптам дают одноразовый nonce (script-src 'nonce-...'), генерируемый на запрос; strict-dynamic позволяет доверенному скрипту подгружать другие, отменяя host-allowlist. Это убирает 'unsafe-inline' и оставляет исполняться только помеченным скриптам."
+  - q: "Что делает SameSite=Lax по умолчанию и какие сценарии CSRF остаются?"
+    a: "Lax (дефолт) не шлёт куку на кросс-сайтовые POST/подзапросы, но шлёт на топ-левел GET-навигацию — это отсекает классический CSRF на формах. Остаются: GET-запросы, меняющие состояние (антипаттерн), и атаки внутри того же сайта; для надёжности — ещё и CSRF-токены."
+applications:
+  - "Многоуровневая защита от XSS: экранирование + CSP (nonce) + httpOnly."
+  - "SameSite-куки и CSRF-токены против CSRF."
+  - "Понимание, что каждый механизм закрывает лишь часть модели угроз."
 references:
   - title: "OWASP: XSS Prevention Cheat Sheet"
     url: https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
